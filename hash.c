@@ -109,6 +109,11 @@ static HashRec* resize(struct naHash* hash)
         int oldsz = hr->size;
         while(oldsz) { oldsz >>= 1; lgsz++; }
     }
+
+    // REVIEW: Memory Leak - 196,628 bytes in 1 blocks are still reachable
+    // Since method returns a HashRec*, assuming caller is responsible for freeing the memory
+    // trace: codegen::naInternSymbol() > naHash_set() > size()
+    // seems to be a known issue - refer to comment @ codegen::naInternSymbol()
     hr2 = naAlloc(recsize(lgsz));
     hr2->size = hr2->next = 0;
     hr2->lgsz = lgsz;
@@ -173,17 +178,6 @@ void naiGCMarkHash(naRef hash)
         if(TAB(hr)[i] >= 0) {
             naiGCMark(ENTS(hr)[TAB(hr)[i]].key);
             naiGCMark(ENTS(hr)[TAB(hr)[i]].val);
-        }
-}
-
-void oldnaiGCMarkHash(naRef hash)
-{
-    int i;
-    HashRec* hr = REC(hash);
-    for (i = 0; hr && i < NCELLS(hr); i++)
-        if (TAB(hr)[i] >= 0) {
-            oldnaiGCMark(ENTS(hr)[TAB(hr)[i]].key);
-            oldnaiGCMark(ENTS(hr)[TAB(hr)[i]].val);
         }
 }
 
