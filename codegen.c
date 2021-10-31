@@ -88,7 +88,12 @@ static int findConstantIndex(struct Parser* p, struct Token* t)
         if(t->type == TOK_SYMBOL) c = naInternSymbol(c);
     } else if(t->type == TOK_FUNC) c = newLambda(p, t);
     else if(t->type == TOK_LITERAL) c = naNum(t->num);
-    else naParseError(p, "invalid/non-constant constant", t->line);
+    else {
+        naParseError(p, "invalid/non-constant constant", t->line);
+        /* naParseError() doesn't return, but this stops compiler complaining
+        about <c> not being set. */
+        return -1;
+    }
     return internConstant(p, c);
 }
 
