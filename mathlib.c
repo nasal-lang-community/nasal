@@ -88,7 +88,20 @@ static naRef f_floor(naContext c, naRef me, int argc, naRef* args)
     naRef a = naNumValue(argc > 0 ? args[0] : naNil());
     if(naIsNil(a))
         naRuntimeError(c, "non numeric argument to floor()");
-    a.num = floor(a.num);
+    naRef b = naNumValue(argc > 1 ? args[1] : naNil());
+    double divisor = naIsNil(b) ? 1.0 : b.num;
+    a.num = floor(a.num / divisor) * divisor;
+    return VALIDATE(a);
+}
+
+static naRef f_trunc(naContext c, naRef me, int argc, naRef* args)
+{
+    naRef a = naNumValue(argc > 0 ? args[0] : naNil());
+    if (naIsNil(a))
+        naRuntimeError(c, "non numeric argument to trunv()");
+    naRef b = naNumValue(argc > 1 ? args[1] : naNil());
+    double divisor = naIsNil(b) ? 1.0 : b.num;
+    a.num = trunc(a.num / divisor) * divisor;
     return VALIDATE(a);
 }
 
@@ -221,6 +234,7 @@ static naCFuncItem funcs[] = {
     { "atan", f_atan },
     { "floor", f_floor },
     { "ceil", f_ceil },
+    { "trunc", f_trunc },
     { "fmod", f_fmod },
     { "clamp", f_clamp },
     { "periodic", f_periodic },
