@@ -673,6 +673,74 @@ static naRef f_id(naContext c, naRef me, int argc, naRef* args)
     return NEWCSTR(c, buf);
 }
 
+// Python-like range (a vector filled with numbers from start to stop, spaced by step)
+// Synopsis:
+//    range([start, ]stop[, step])
+//        start=0:    Optional. An integer number specifying at which position to start.
+//        stop:        Required. A number specifying at which position to stop (not included)
+//        step=1:        Optional. An integer number greater 0 specifying the incrementation.
+//
+// Examples:
+//        var r = range(5);
+//         debug.dump(r)
+//    prints [0, 1, 2, 3, 4]
+//
+//        var r = range(2, 5);
+//         debug.dump(r)
+//    prints [2, 3, 4]
+//
+//        var r = range(0, 10, 2);
+//         debug.dump(r)
+//    prints [0, 2, 4, 6, 8]
+//
+//        var r = range(0, 0);
+//        debug.dump(r)
+//    prints []
+//
+//        var r = range(0, 1);
+//        debug.dump(r)
+//    prints [0]
+//
+//        var r = range(0, 0.1);
+//        debug.dump(r)
+//    prints [0]
+static naRef f_range(naContext c, naRef me, int argc, naRef* args)
+{
+    int start = 0;
+    int step = 1;
+    int end = 0;
+    naRef out;
+
+    if ((argc < 1) || (argc > 3) || !naIsNum(args[0]))
+        naRuntimeError(c, "Bad/missing argument to range()");
+    
+    if (argc > 1) {
+        if (!naIsNum(args[1])) {
+            naRuntimeError(c, "Invalid argument to range()");
+        }
+
+        start = (int) args[0].num;
+        end = (int) args[1].num;
+
+        if (argc > 2) {
+            if (!naIsNum(args[2])) {
+                naRuntimeError(c, "Invalid argument to range()");
+            }
+
+            step = (int) args[2].num;
+        }
+    } else {
+        // single arg mode
+        end = (int) args[0].num;
+    }
+
+    out = naNewVector(c);
+    for (int i=start; i<end; i+=step) {
+        naVec_append(out, naNum(i));
+    }
+    return out;
+}
+
 static naCFuncItem funcs[] = {
     { "size", f_size },
     { "keys", f_keys }, 
@@ -713,6 +781,7 @@ static naCFuncItem funcs[] = {
     { "isvec", f_isvec },
     { "ishash", f_ishash },
     { "isfunc", f_isfunc },
+    { "range", f_range },
     { 0 }
 };
 
