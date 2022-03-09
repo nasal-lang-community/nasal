@@ -61,6 +61,18 @@ static int boolify(naContext ctx, naRef r)
 {
     if(IS_NUM(r)) return r.num != 0;
     if(IS_NIL(r) || IS_END(r)) return 0;
+
+    // empty vectors are false, non-empty vectors are true
+    if (IS_VEC(r)) {
+        return naVec_size(r) > 0;
+    }
+
+    // empty hashes are false, non-empty are true
+    if (IS_HASH(r)) {
+        return naHash_size(r) > 0;
+    }
+
+    if (IS_OBJ(r)) return 1;
     if(IS_STR(r)) {
         double d;
         if(naStr_len(r) == 0) return 0;
