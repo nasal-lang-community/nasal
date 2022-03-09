@@ -148,6 +148,14 @@ static naRef f_cmp(naContext c, naRef me, int argc, naRef* args)
     return naNum(alen == blen ? 0 : (alen < blen ? -1 : 1));
 }
 
+static naRef f_str(naContext c, naRef me, int argc, naRef* args)
+{
+    if (argc < 1)
+        ARGERR();
+    
+    return naStringValue(c, args[0]);
+}
+
 static naRef f_substr(naContext c, naRef me, int argc, naRef* args)
 {
     int start, len, srclen;
@@ -752,6 +760,7 @@ static naCFuncItem funcs[] = {
     { "delete", f_delete }, 
     { "int", f_int },
     { "num", f_num },
+    { "str", f_str },
     { "streq", f_streq },
     { "cmp", f_cmp },
     { "substr", f_substr },
