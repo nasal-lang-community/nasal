@@ -37,8 +37,8 @@
 
 extern"C" {
     // these are declared inside nasal/gc.c
-    extern int GCglobalAlloc();
-    extern int naGarbageCollect();
+    //extern int GCglobalAlloc();
+    //extern int naGarbageCollect();
 
     // these are used by the detailed debug in the Nasal GC.
     SGTimeStamp global_timestamp;
@@ -64,7 +64,8 @@ public:
     }
 
     int process() override{
-        return naGarbageCollect();
+        //return naGarbageCollect();
+        return 1;// process ran;
     }
 };
 

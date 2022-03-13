@@ -24,8 +24,6 @@ struct Globals* globals = 0;
 
 static naRef bindFunction(naContext ctx, struct Frame* f, naRef code);
 
-static void logError(naContext ctx);
-
 #define ERR(c, msg) naRuntimeError((c),(msg))
 void naRuntimeError(naContext c, const char* fmt, ...)
 {
@@ -33,11 +31,6 @@ void naRuntimeError(naContext c, const char* fmt, ...)
     va_start(ap, fmt);
     vsnprintf(c->error, sizeof(c->error), fmt, ap);
     va_end(ap);
-
-    /* Shows error and backtrace. Not usually useful because Flightgear
-    callback already shows this information. */
-    //logError(c);
-
     longjmp(c->jumpHandle, 1);
 }
 
@@ -176,7 +169,7 @@ static void initContext(naContext c)
     c->error[0] = 0;
     c->userData = 0;
 }
-#define BASE_SIZE 256000
+
 static void initGlobals()
 {
     int i;
@@ -187,10 +180,10 @@ static void initGlobals()
     globals->sem = naNewSem();
     globals->lock = naNewLock();
 
-    globals->allocCount = BASE_SIZE; // reasonable starting value
+    globals->allocCount = 256; // reasonable starting value
     for(i=0; i<NUM_NASAL_TYPES; i++)
         naGC_init(&(globals->pools[i]), i);
-    globals->deadsz = BASE_SIZE;
+    globals->deadsz = 256;
     globals->ndead = 0;
     // REVIEW: Memory Leak - 2,048,000 bytes in 1 blocks are still reachable
     // naFree(globals->deadBlocks) is required during shutdown
