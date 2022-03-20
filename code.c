@@ -65,13 +65,13 @@ static int boolify(naContext ctx, naRef r)
         return naHash_size(r) > 0;
     }
 
-    if (IS_OBJ(r)) return 1;
     if(IS_STR(r)) {
         double d;
         if(naStr_len(r) == 0) return 0;
         if(naStr_tonum(r, &d)) return d != 0;
         else return 1;
     }
+    if (IS_OBJ(r)) return 1;
     ERR(ctx, "non-scalar used in boolean context");
     return 0;
 }
