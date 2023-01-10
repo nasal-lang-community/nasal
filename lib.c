@@ -213,11 +213,24 @@ static naRef f_chr(naContext c, naRef me, int argc, naRef* args)
 
 static naRef f_contains(naContext c, naRef me, int argc, naRef* args)
 {
-    naRef hash = argc > 0 ? args[0] : naNil();
+    naRef hashOrVec = argc > 0 ? args[0] : naNil();
     naRef key = argc > 1 ? args[1] : naNil();
-    if(naIsNil(hash) || naIsNil(key)) ARGERR();
-    if(!naIsHash(hash)) return naNil();
-    return naHash_get(hash, key, &key) ? naNum(1) : naNum(0);
+    if (naIsNil(hashOrVec) || naIsNil(key)) ARGERR();
+
+    if (naIsVector(hashOrVec)) {
+        // very similar to vecindex below
+        const int len = naVec_size(hashOrVec);
+        int i;
+        for (i = 0; i < len; i++) {
+            if (naEqual(naVec_get(hashOrVec, i), key))
+                return naNum(1);
+        }
+        return naNum(0); // not found in the vector
+    } else if (naIsHash(hashOrVec)) {
+        return naHash_get(hashOrVec, key, &key) ? naNum(1) : naNum(0);
+    }
+
+    return naNil();
 }
 
 static naRef f_vecindex(naContext c, naRef me, int argc, naRef* args)
