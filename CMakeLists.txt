@@ -29,7 +29,14 @@ set(SOURCES
     code.h
     data.h
     parse.h
+    unixlib.c
     NasalEmesaryInterface.cxx
     )
 
 simgear_component(nasal nasal "${SOURCES}" "${HEADERS}")
+
+if(ENABLE_TESTS)
+
+add_simgear_test(nasal-bin nasal-bin.c)
+
+endif(ENABLE_TESTS)
