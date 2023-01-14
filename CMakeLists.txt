@@ -1,6 +1,8 @@
 
 include (SimGearComponent)
 
+add_definitions(-DSOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}")
+
 set(HEADERS 
     naref.h
     nasal.h

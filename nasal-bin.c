@@ -43,15 +43,17 @@ static naRef print(naContext c, naRef me, int argc, naRef* args)
     return naNil();
 }
 
+#define MAX_PATH_LEN 1024
 #define NASTR(s) naStr_fromdata(naNewString(ctx), (s), strlen((s)))
 int main(int argc, char** argv)
 {
-    FILE* f;
-    struct stat fdat;
-    char *buf, *script;
-    struct Context *ctx;
     naRef code, namespace, result, *args;
+    char path[MAX_PATH_LEN];
+    struct Context *ctx;
+    char *buf, *script;
+    struct stat fdat;
     int errLine, i;
+    FILE* f;
 
     if(argc < 2) {
         fprintf(stderr, "nasal: must specify a script to run\n");
@@ -62,8 +64,13 @@ int main(int argc, char** argv)
     // Read the contents of the file into a buffer in memory.
     f = fopen(script, "rb");
     if(!f) {
-        fprintf(stderr, "nasal: could not open input file: %s\n", script);
-        exit(1);
+        snprintf(path, MAX_PATH_LEN-1, SOURCE_DIR"/misc/%s", script);
+        f = fopen(path, "rb");
+        if(!f) {
+            fprintf(stderr, "nasal: could not open input file: %s\n", path);
+            exit(1);
+        }
+        script = path;
     }
     stat(script, &fdat);
     buf = malloc(fdat.st_size);
@@ -71,7 +78,7 @@ int main(int argc, char** argv)
         fprintf(stderr, "nasal: error in fread()\n");
         exit(1);
     }
-    
+
     // Create an interpreter context
     ctx = naNewContext();
 
@@ -139,7 +146,7 @@ int main(int argc, char** argv)
         naContinue(ctx);
     }
 #endif
-    
+
     checkError(ctx);
     return 0;
 }
