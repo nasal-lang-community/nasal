@@ -270,7 +270,7 @@ static int lexIntLiteral(struct Parser* p, int index, int base)
 #define ISNUM(c) ((c) >= '0' && (c) <= '9')
 #define ISHEX(c) (ISNUM(c) || ((c)>='a' && (c)<='f') || ((c)>='A' && (c)<='F'))
 #define NUMSTART(c) (ISNUM(c) || (c) == '+' || (c) == '-')
-#define ISSEPARATOR(c) (strchr(")= ;\t\n\0", (c)))
+#define ISSEPARATOR(c) (strchr(",)= ;\t\n\0", (c)))
 static int lexNumLiteral(struct Parser* p, int index)
 {
     int len = p->len, i = index;
