@@ -105,7 +105,9 @@ int main(int argc, char** argv)
     naAddSym(ctx, namespace, "math", naInit_math(ctx));
     naAddSym(ctx, namespace, "bits", naInit_bits(ctx));
     naAddSym(ctx, namespace, "io", naInit_io(ctx));
+#ifndef _WIN32
     naAddSym(ctx, namespace, "unix", naInit_unix(ctx));
+#endif
     naAddSym(ctx, namespace, "thread", naInit_thread(ctx));
 #ifdef HAVE_PCRE
     naAddSym(ctx, namespace, "regex", naInit_regex(ctx));
