@@ -31,9 +31,14 @@ set(SOURCES
     code.h
     data.h
     parse.h
-    unixlib.c
     NasalEmesaryInterface.cxx
     )
+
+if (NOT WIN32)
+  set(SOURCES ${SOURCES}
+      unixlib.c
+      )
+endif(NOT WIN32)
 
 simgear_component(nasal nasal "${SOURCES}" "${HEADERS}")
 

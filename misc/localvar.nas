@@ -1,4 +1,5 @@
 a = 1;
+var true = 1;
 
 #print("a = ", a, "\n");
 if(a != 1) { die(); }
@@ -26,3 +27,15 @@ if(a != 2) { die(); }
 
 true_a = 0;
 if(true_a != 0) { die(); }
+
+my_hdg_true = true;
+if (my_hdg_true != 1) { die(); }
+
+# test true
+var setprop = func(a,b){
+   if (b != "true") { die(); }
+};
+setprop("/sim/freeze/master",'true');
+
+a=(true and 1);
+if(a != true) { die(); }
