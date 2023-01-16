@@ -1,5 +1,5 @@
 a = 1;
-var true = 1;
+#var true = 1;
 
 #print("a = ", a, "\n");
 if(a != 1) { die(); }
@@ -39,3 +39,6 @@ setprop("/sim/freeze/master",'true');
 
 a=(true and 1);
 if(a != true) { die(); }
+
+var a = { "key": true };
+if(a["key"] != true) { die(); }

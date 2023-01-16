@@ -1,7 +1,6 @@
 #include "parse.h"
 
 #include <stdio.h>
-#include <string.h>
 
 // Static table of recognized lexemes in the language
 static const struct Lexeme {
@@ -37,6 +36,8 @@ static const struct Lexeme {
     {">",  TOK_GT},
     {">=", TOK_GTE},
     {"nil", TOK_NIL},
+    {"true", TOK_TRUE},
+    {"false", TOK_FALSE},
     {"if",    TOK_IF},
     {"elsif", TOK_ELSIF},
     {"else",  TOK_ELSE},
@@ -131,6 +132,16 @@ static void newToken(struct Parser* p, int pos, int type,
             last->strlen += slen;
             return;
         }
+    }
+
+    // Treat boolean constants as numeric literals
+    if(type == TOK_TRUE) {
+        type = TOK_LITERAL;
+        num = 1.0;
+    }
+    if(type == TOK_FALSE) {
+        type = TOK_LITERAL;
+        num = 0.0;
     }
 
     tok = naParseAlloc(p, sizeof(struct Token));
@@ -270,37 +281,28 @@ static int lexIntLiteral(struct Parser* p, int index, int base)
 #define ISNUM(c) ((c) >= '0' && (c) <= '9')
 #define ISHEX(c) (ISNUM(c) || ((c)>='a' && (c)<='f') || ((c)>='A' && (c)<='F'))
 #define NUMSTART(c) (ISNUM(c) || (c) == '+' || (c) == '-')
-#define ISSEPARATOR(c) (strchr(",)= ;\t\n\0", (c)))
 static int lexNumLiteral(struct Parser* p, int index)
 {
     int len = p->len, i = index;
     unsigned char* buf = (unsigned char*)p->buf;
     double d;
 
-    if (len >= 4 && !memcmp(buf+i, "true", 4)) {
-        i += 4;
-    } else if (len >= 5 && !memcmp(buf+i, "false", 5)) {
-        i += 5;
+    if( buf[i] == '0' && i + 2 < len ) {
+        if( buf[i+1] == 'x' && ISHEX(buf[i+2]) )
+            return lexIntLiteral(p, index+2, 16);
+        if( buf[i+1] == 'o' && ISNUM(buf[i+2]) )
+            return lexIntLiteral(p, index+2, 8);
     }
-    else
-    {
-        if( buf[i] == '0' && i + 2 < len ) {
-            if( buf[i+1] == 'x' && ISHEX(buf[i+2]) )
-                return lexIntLiteral(p, index+2, 16);
-            if( buf[i+1] == 'o' && ISNUM(buf[i+2]) )
-                return lexIntLiteral(p, index+2, 8);
-        }
 
+    while(i<len && ISNUM(buf[i])) i++;
+    if(i<len && buf[i] == '.') {
+        i++;
         while(i<len && ISNUM(buf[i])) i++;
-        if(i<len && buf[i] == '.') {
-            i++;
-            while(i<len && ISNUM(buf[i])) i++;
-        }
-        if(i+1<len && (buf[i] == 'e' || buf[i] == 'E') && NUMSTART(buf[i+1])) {
-            i++;
-            if(buf[i] == '-' || buf[i] == '+') i++;
-            while(i<len && ISNUM(buf[i])) i++;
-        }
+    }
+    if(i+1<len && (buf[i] == 'e' || buf[i] == 'E') && NUMSTART(buf[i+1])) {
+        i++;
+        if(buf[i] == '-' || buf[i] == '+') i++;
+        while(i<len && ISNUM(buf[i])) i++;
     }
     naStr_parsenum(p->buf + index, i - index, &d);
     newToken(p, index, TOK_LITERAL, 0, 0, d);
@@ -380,16 +382,10 @@ void naLex(struct Parser* p)
             i = lexStringLiteral(p, i, c);
             break;
         default:
-        {
-            int len = p->len-i;
-            unsigned char* buf = (unsigned char*)p->buf+i;
-            if ((len > 4 && !memcmp(buf, "true", 4) && ISSEPARATOR(buf[4])) ||
-                (len > 5 && !memcmp(buf, "false", 5) && ISSEPARATOR(buf[5])) ||
-                (ISNUM(c) || (c == '.' && (i+1)<p->len && ISNUM(p->buf[i+1]))))
+            if(ISNUM(c) || (c == '.' && (i+1)<p->len && ISNUM(p->buf[i+1])))
                 i = lexNumLiteral(p, i);
             else handled = 0;
         }
-        } // switch
 
         // Lexemes and symbols are a little more complicated.  Pick
         // the longest one that matches.  Since some lexemes look like
