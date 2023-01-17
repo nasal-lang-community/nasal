@@ -38,9 +38,9 @@
   (modify-syntax-entry ?\\ "\\" nasal-mode-syntax-table)
   (modify-syntax-entry ?\# "<"  nasal-mode-syntax-table)
   (modify-syntax-entry ?\n ">#"  nasal-mode-syntax-table)
-  ; Square brackets act as parenthesis
+  ; Square brackets act as parentheses
   (modify-syntax-entry ?\[ "(]"  nasal-mode-syntax-table)
-  (modify-syntax-entry ?]  ")"  nasal-mode-syntax-table))
+  (modify-syntax-entry ?\] ")["  nasal-mode-syntax-table))
 
 (defconst nasal-font-lock-keywords
   (eval-when-compile
