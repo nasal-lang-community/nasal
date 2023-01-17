@@ -48,7 +48,8 @@
      (cons (regexp-opt '("parents" "me" "arg") 'words)
 	   'font-lock-variable-name-face)
      (regexp-opt '("and" "break" "continue" "else" "elsif" "for" "foreach"
-		   "forindex" "func" "if" "nil" "or""return" "var" "while")
+		   "forindex" "func" "if" "nil" "or" "return" "var" "while"
+		   "true" "false")
 		 'words)
      (list (regexp-opt '("append" "bind" "call" "caller" "chr" "closure"
 			 "cmp" "compile" "contains" "delete" "die" "find"
