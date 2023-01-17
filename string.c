@@ -202,7 +202,7 @@ static int tonum(unsigned char* s, int len, double* result)
 
     if(len == 1 && (*s=='.' || *s=='-' || *s=='+')) return 0;
 
-    if (len == 4 && !memcmp(s, "true", 4) && s[4] ) {
+    if (len == 4 && !memcmp(s, "true", 4)) {
         *result = 1.0;
         return 1;
     } else if (len == 5 && !memcmp(s, "false", 5)) {

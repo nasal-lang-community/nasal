@@ -32,7 +32,7 @@ my_hdg_true = true;
 if (my_hdg_true != 1) { die(); }
 
 # test true
-var setprop = func(a,b){
+setprop = func(a,b){
    if (b != "true") { die(); }
 };
 setprop("/sim/freeze/master",'true');
@@ -40,5 +40,8 @@ setprop("/sim/freeze/master",'true');
 a=(true and 1);
 if(a != true) { die(); }
 
-var a = { "key": true };
+a = { "key": true };
 if(a["key"] != true) { die(); }
+
+a = int("true");
+if(a != true) { die(); }
