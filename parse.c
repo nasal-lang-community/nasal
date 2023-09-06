@@ -18,6 +18,7 @@ static const struct precedence {
         TOK_BIT_ANDEQ, TOK_BIT_OREQ,
         TOK_BIT_XOREQ },                       PREC_REVERSE },
     { { TOK_COLON, TOK_QUESTION },             PREC_REVERSE },
+    { { TOK_NULL_CHAIN},                       PREC_BINARY  },
     { { TOK_VAR },                             PREC_PREFIX  },
     { { TOK_BIT_OR },                          PREC_BINARY  },
     { { TOK_BIT_XOR },                         PREC_BINARY  },
@@ -31,7 +32,7 @@ static const struct precedence {
     { { TOK_MINUS, TOK_NEG, TOK_NOT,
         TOK_CAT, TOK_BIT_NEG },                PREC_PREFIX  },
     { { TOK_LPAR, TOK_LBRA },                  PREC_SUFFIX  },
-    { { TOK_DOT },                             PREC_BINARY  },
+    { { TOK_DOT, TOK_NULL_ACCESS},             PREC_BINARY  },
 };
 #define PRECEDENCE_LEVELS (sizeof(PRECEDENCE)/sizeof(struct precedence))
 

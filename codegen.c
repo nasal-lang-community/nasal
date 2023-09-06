@@ -343,6 +343,18 @@ static void genShortCircuit(struct Parser* p, struct Token* t)
     fixJumpTarget(p, end);
 }
 
+static void genNullishChain(struct Parser* p, struct Token* t)
+{
+    int end;
+    genExpr(p, LEFT(t));
+    // should we compare to actual nil here?
+    end = emitJump(p, OP_JIFTRUE);
+    // if we didn't jump, pop and use right hand side
+    emit(p, OP_POP);
+    genExpr(p, RIGHT(t));
+    fixJumpTarget(p, end);
+}
+
 
 static void genIf(struct Parser* p, struct Token* tif, struct Token* telse)
 {
@@ -377,6 +389,24 @@ static void genQuestion(struct Parser* p, struct Token* t)
     jumpEnd = emitJump(p, OP_JMP);
     fixJumpTarget(p, jumpNext);
     genExpr(p, RIGHT(RIGHT(t))); // the "else" expr
+    fixJumpTarget(p, jumpEnd);
+}
+
+static void genNullOrMember(struct Parser* p, struct Token* t)
+{
+    int jumpNext, jumpEnd;
+    genExpr(p, LEFT(t));
+    if (!RIGHT(t) || RIGHT(t)->type != TOK_SYMBOL)
+        naParseError(p, "object field not symbol", RIGHT(t)->line);
+
+    // if left is null, jump over the member access
+    jumpNext = emitJump(p, OP_JIFNOT);
+    // object is non-nil here, emit the regular member access
+    emitImmediate(p, OP_MEMBER, findConstantIndex(p, RIGHT(t)));
+    jumpEnd = emitJump(p, OP_JMP);
+    fixJumpTarget(p, jumpNext);
+    emit(p, OP_POP);
+    emit(p, OP_PUSHNIL); // push a nil as our result
     fixJumpTarget(p, jumpEnd);
 }
 
@@ -711,10 +741,17 @@ static void genExpr(struct Parser* p, struct Token* t)
         genExpr(p, LEFT(t));
         if(!RIGHT(t) || RIGHT(t)->type != TOK_SYMBOL)
             naParseError(p, "object field not symbol", RIGHT(t)->line);
+
         emitImmediate(p, OP_MEMBER, findConstantIndex(p, RIGHT(t)));
+        break;
+    case TOK_NULL_ACCESS:
+        genNullOrMember(p, t);
         break;
     case TOK_EMPTY: case TOK_NIL:
         emit(p, OP_PUSHNIL);
+        break;
+    case TOK_NULL_CHAIN:
+        genNullishChain(p, t);
         break;
     case TOK_AND: case TOK_OR:
         genShortCircuit(p, t);
