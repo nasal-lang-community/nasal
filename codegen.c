@@ -347,10 +347,12 @@ static void genNullishChain(struct Parser* p, struct Token* t)
 {
     int end;
     genExpr(p, LEFT(t));
-    // should we compare to actual nil here?
-    end = emitJump(p, OP_JIFTRUE);
+    emit(p, OP_DUP); // duplicate since OP_EQ will discard
+    emit(p, OP_PUSHNIL);
+    emit(p, OP_EQ); // compare to exact nil, don't boolify()
+    end = emitJump(p, OP_JIFNOTPOP);
     // if we didn't jump, pop and use right hand side
-    emit(p, OP_POP);
+    emit(p, OP_POP); // pop the duplicated value
     genExpr(p, RIGHT(t));
     fixJumpTarget(p, end);
 }
@@ -399,14 +401,23 @@ static void genNullOrMember(struct Parser* p, struct Token* t)
     if (!RIGHT(t) || RIGHT(t)->type != TOK_SYMBOL)
         naParseError(p, "object field not symbol", RIGHT(t)->line);
 
+    emit(p, OP_DUP); // duplicate since OP_EQ will discard
+    emit(p, OP_PUSHNIL);
+    emit(p, OP_EQ); // compare to exact nil, don't boolify()
+
     // if left is null, jump over the member access
-    jumpNext = emitJump(p, OP_JIFNOT);
+    jumpNext = emitJump(p, OP_JIFTRUE);
+    emit(p, OP_POP); // pop the comparisom result
     // object is non-nil here, emit the regular member access
     emitImmediate(p, OP_MEMBER, findConstantIndex(p, RIGHT(t)));
     jumpEnd = emitJump(p, OP_JMP);
     fixJumpTarget(p, jumpNext);
+
+    // pop comparisom result; we don't pop the LEFT(t) expr result here
+    // since we want a NIL as our result, and we know that expression
+    // is qualt to nil.
     emit(p, OP_POP);
-    emit(p, OP_PUSHNIL); // push a nil as our result
+
     fixJumpTarget(p, jumpEnd);
 }
 
