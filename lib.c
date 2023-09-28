@@ -312,8 +312,8 @@ static naRef f_ghosttype(naContext c, naRef me, int argc, naRef* args)
     if(naGhost_type(g)->name) {
         return NEWCSTR(c, (char*)naGhost_type(g)->name);
     } else {
-        char buf[32];
-        sprintf(buf, "%p", naGhost_type(g));
+        char buf[128];
+        snprintf(buf, 128, "%p", naGhost_type(g));
         return NEWCSTR(c, buf);
     }
 }
