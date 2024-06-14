@@ -1,5 +1,8 @@
-#include "nasal.h"
 #include "data.h"
+#include "nasal.h"
+#include "simgear/nasal/naref.h"
+
+#include <string.h>
 
 static struct VecRec* newvecrec(struct VecRec* old)
 {
@@ -116,6 +119,28 @@ naRef naVec_removelast(naRef vec)
         o = v->array[v->size - 1];
         v->size--;
         if(v->size < (v->alloced >> 1))
+            resize(PTR(vec).vec);
+        return o;
+    }
+    return naNil();
+}
+
+//------------------------------------------------------------------------------
+naRef naVec_remove(naRef vec, int index)
+{
+    naRef o;
+    if (IS_VEC(vec)) {
+        struct VecRec* v = PTR(vec).vec->rec;
+        if (!v || v->size == 0) return naNil();
+        if ((index < 0) || (index >= v->size - 1)) return naNil();
+
+        o = v->array[index];
+        // must use memmove since this range overlaps itself
+        memmove((void*)&v->array[index],
+                (void*)&v->array[index + 1], (v->size - (index + 1)) * sizeof(naRef));
+
+        v->size--;
+        if (v->size < (v->alloced >> 1))
             resize(PTR(vec).vec);
         return o;
     }

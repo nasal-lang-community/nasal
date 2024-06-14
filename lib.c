@@ -47,6 +47,39 @@ static naRef f_append(naContext c, naRef me, int argc, naRef* args)
     return args[0];
 }
 
+static naRef f_vec_remove(naContext c, naRef me, int argc, naRef* args)
+{
+    if (argc < 2 || !naIsVector(args[0])) ARGERR();
+    naRef vec = args[0];
+    naRef value = args[1];
+    if (naIsNil(vec) || naIsNil(value)) ARGERR();
+
+    int len = naVec_size(vec);
+    int i;
+    for (i = 0; i < len; i++) {
+        if (naEqual(naVec_get(vec, i), value)) {
+            naVec_remove(vec, i);
+            --len;
+        }
+    }
+
+    return args[0]; // return the vec to allow chaining
+}
+
+
+static naRef f_vec_removeat(naContext c, naRef me, int argc, naRef* args)
+{
+    if (argc < 2 || !naIsVector(args[0])) ARGERR();
+    naRef vec = args[0];
+    int index = (int)naNumValue(args[1]).num;
+    if (naIsNil(vec)) ARGERR();
+
+    int len = naVec_size(vec);
+    if ((index < 0) || (index >= len)) ARGERR();
+
+    return naVec_remove(vec, index);
+}
+
 static naRef f_pop(naContext c, naRef me, int argc, naRef* args)
 {
     if(argc < 1 || !naIsVector(args[0])) ARGERR();
@@ -690,7 +723,7 @@ static naRef f_id(naContext c, naRef me, int argc, naRef* args)
         naGhostType *gt = PTR(args[0]).ghost->gtype;
         t = gt->name ? (char*)gt->name : "ghost";
     }
-    sprintf(buf, "%s:%p", (char*)t, (void*)PTR(args[0]).obj);
+    snprintf(buf, sizeof(buf), "%s:%p", (char*)t, (void*)PTR(args[0]).obj);
     return NEWCSTR(c, buf);
 }
 
@@ -763,49 +796,50 @@ static naRef f_range(naContext c, naRef me, int argc, naRef* args)
 }
 
 static naCFuncItem funcs[] = {
-    { "size", f_size },
-    { "keys", f_keys }, 
-    { "append", f_append }, 
-    { "pop", f_pop }, 
-    { "setsize", f_setsize }, 
-    { "subvec", f_subvec },
-    { "vecindex", f_vecindex },
-    { "delete", f_delete }, 
-    { "int", f_int },
-    { "num", f_num },
-    { "str", f_str },
-    { "streq", f_streq },
-    { "cmp", f_cmp },
-    { "substr", f_substr },
-    { "left", f_left },
-    { "right", f_right },
-    { "chr", f_chr },
-    { "contains", f_contains },
-    { "typeof", f_typeof },
-    { "ghosttype", f_ghosttype },
-    { "compile", f_compile },
-    { "call", f_call },
-    { "die", f_die },
-    { "sprintf", f_sprintf },
-    { "caller", f_caller },
-    { "closure", f_closure },
-    { "find", f_find },
-    { "split", f_split },
-    { "rand", f_rand },
-    { "bind", f_bind },
-    { "sort", f_sort },
-    { "id", f_id },
-    { "isscalar", f_isscalar },
-    { "isint", f_isint },
-    { "isnum", f_isnum },
-    { "isghost", f_isghost },
-    { "isstr", f_isstr },
-    { "isvec", f_isvec },
-    { "ishash", f_ishash },
-    { "isfunc", f_isfunc },
-    { "range", f_range },
-    { 0 }
-};
+    {"size", f_size},
+    {"keys", f_keys},
+    {"append", f_append},
+    {"pop", f_pop},
+    {"setsize", f_setsize},
+    {"subvec", f_subvec},
+    {"vecindex", f_vecindex},
+    {"remove", f_vec_remove},
+    {"removeat", f_vec_removeat},
+    {"delete", f_delete},
+    {"int", f_int},
+    {"num", f_num},
+    {"str", f_str},
+    {"streq", f_streq},
+    {"cmp", f_cmp},
+    {"substr", f_substr},
+    {"left", f_left},
+    {"right", f_right},
+    {"chr", f_chr},
+    {"contains", f_contains},
+    {"typeof", f_typeof},
+    {"ghosttype", f_ghosttype},
+    {"compile", f_compile},
+    {"call", f_call},
+    {"die", f_die},
+    {"sprintf", f_sprintf},
+    {"caller", f_caller},
+    {"closure", f_closure},
+    {"find", f_find},
+    {"split", f_split},
+    {"rand", f_rand},
+    {"bind", f_bind},
+    {"sort", f_sort},
+    {"id", f_id},
+    {"isscalar", f_isscalar},
+    {"isint", f_isint},
+    {"isnum", f_isnum},
+    {"isghost", f_isghost},
+    {"isstr", f_isstr},
+    {"isvec", f_isvec},
+    {"ishash", f_ishash},
+    {"isfunc", f_isfunc},
+    {"range", f_range},
+    {0}};
 
 naRef naInit_std(naContext c)
 {

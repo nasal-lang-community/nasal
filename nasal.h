@@ -261,6 +261,13 @@ naRef naVec_removefirst(naRef vec);
  */
 naRef naVec_removelast(naRef vec);
 
+/*
+ * Remove one element at an index from the vector
+ * This operation reduces the size of the vector by one.
+ * @return the element removed from the index
+*/
+naRef naVec_remove(naRef vec, int index);
+
 // Hash utilities:
 int naHash_size(naRef h);
 int naHash_get(naRef hash, naRef key, naRef* out);
