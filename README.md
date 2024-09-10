@@ -67,9 +67,7 @@ Basically this is a big science experiment.
 | `nil`   |
 
 
-
-
-### Builtin functions
+## Builtin functions
 In lieu of formal API documentation, in the meantime here is an overview of Nasals built-in functions. Note that built-in functions, or "builtins", are implemented directly in the Nasal intrepreter, they are integral. Some confusion can arise when looking at Nasal from a FlightGear-centric perspective, 
 where there are plenty of functions available in Nasal that aren't listed here. 
 
@@ -122,4 +120,35 @@ The nasal builtin functions are implemented in `lib.c` and are denoted by an `f_
 | `ishash()`              |               |
 | `isfunc()`              |               |
 | `range()`               |               |
+
+## Standard Library
+
+### `math`
+
+| Functions         |
+|-------------------|
+| `math.acos()`     |
+| `math.asin()`     |
+| `math.atan()`     |
+| `math.atan2()`    |
+| `math.ceil()`     |
+| `math.clamp()`    |
+| `math.cos()`      |
+| `math.exp()`      |
+| `math.floor()`    |
+| `math.fmod()`     |
+| `math.ln()`       |
+| `math.periodic()` |
+| `math.pow()`      |
+| `math.round()`    |
+| `math.sin()`      |
+| `math.sqrt()`     |
+| `math.trunc()`    |
+
+**Note:** There standard math library is actually missing a math.abs() function.
+
+| Constants |
+|-----------|
+| `math.pi` |
+| `math.e`  |
 
