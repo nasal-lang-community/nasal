@@ -19,7 +19,55 @@ Lastly, I've also always wanted a good excuse to read [Crafting Interepreters by
 Basically this is a big science experiment.
 
 
-## The Nasal language
+# The Nasal language
+
+## Keywords
+
+### Variable Declaration
+| Keyword |
+|---------|
+| `var`   |
+
+### Function Declaration
+| Keyword |
+|---------|
+| `func`  |
+
+### Conditional Control Flow Keywords
+| Keyword |
+|---------|
+| `if`    |
+| `elsif` |
+| `else`  |
+
+### Iterative Control Flow Keywords
+| Keyword   |
+|-----------|
+| `for`     |
+| `foreach` |
+| `while`   |
+
+### Control Flow Keywords
+
+| Keyword    |
+|------------|
+| `continue` |
+| `break`    |
+| `return`   |
+
+### Boolean Literals
+| Keyword |
+|---------|
+| `true`  |
+| `false` |
+
+### Null Value
+| Keyword |
+|---------|
+| `nil`   |
+
+
+
 
 ### Builtin functions
 In lieu of formal API documentation, in the meantime here is an overview of Nasals built-in functions. Note that built-in functions, or "builtins", are implemented directly in the Nasal intrepreter, they are integral. Some confusion can arise when looking at Nasal from a FlightGear-centric perspective, 
