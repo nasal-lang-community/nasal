@@ -287,17 +287,24 @@ int naStrEqual(naRef a, naRef b)
 int naTypeSize(int type)
 {
     switch(type) {
-    case T_STR: return sizeof(struct naStr);
-    case T_VEC: return sizeof(struct naVec);
-    case T_HASH: return sizeof(struct naHash);
-    case T_CODE: return sizeof(struct naCode);
-    case T_FUNC: return sizeof(struct naFunc);
-    case T_CCODE: return sizeof(struct naCCode);
-    case T_GHOST: return sizeof(struct naGhost);
+        case T_STR:
+            return sizeof(struct naStr);
+        case T_VEC:
+            return sizeof(struct naVec);
+        case T_HASH:
+            return sizeof(struct naHash);
+        case T_CODE:
+            return sizeof(struct naCode);
+        case T_FUNC:
+            return sizeof(struct naFunc);
+        case T_CCODE:
+            return sizeof(struct naCCode);
+        case T_GHOST:
+            return sizeof(struct naGhost);
     };
-    return 0x7fffffff; // Make sure the answer is nonsense :)
-}
 
+    return -1; // Return a negative value to indicate an unsupported type, invalid size, etc.
+}
 
 int naIsNil(naRef r)
 {
