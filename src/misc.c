@@ -5,10 +5,25 @@
 #include "nasal.h"
 #include "code.h"
 
-void naFree(void* m) { free(m); }
-void* naAlloc(int n) { return malloc(n); }
-void* naRealloc(void* b, int n) { return realloc(b, n); }
-void naBZero(void* m, int n) { memset(m, 0, n); }
+void naFree(void* m)
+{
+    free(m);
+}
+
+void* naAlloc(int n)
+{
+    return malloc(n);
+}
+
+void* naRealloc(void* b, int n)
+{
+    return realloc(b, n);
+}
+
+void naBZero(void* m, int n)
+{
+    memset(m, 0, n);
+}
 
 void naTempSave(naContext c, naRef r)
 {
@@ -256,19 +271,67 @@ int naTypeSize(int type)
     return 0x7fffffff; // Make sure the answer is nonsense :)
 }
 
-int naIsNil(naRef r)    { return IS_NIL(r); }
-int naIsNum(naRef r)    { return IS_NUM(r); }
-int naIsString(naRef r) { return IS_STR(r); }
-int naIsScalar(naRef r) { return IS_SCALAR(r); }
-int naIsVector(naRef r) { return IS_VEC(r); }
-int naIsHash(naRef r)   { return IS_HASH(r); }
-int naIsFunc(naRef r)   { return IS_FUNC(r); }
-int naIsCode(naRef r)   { return IS_CODE(r); }
-int naIsCCode(naRef r)  { return IS_CCODE(r); }
-int naIsGhost(naRef r)  { return IS_GHOST(r); }
-int naIsIdentical(naRef l, naRef r) { return IDENTICAL(l, r); }
 
-void naSetUserData(naContext c, void* p) { c->userData = p; }
+int naIsNil(naRef r)
+{
+    return IS_NIL(r);
+}
+
+int naIsNum(naRef r)
+{
+    return IS_NUM(r);
+}
+
+int naIsString(naRef r)
+{
+    return IS_STR(r);
+}
+
+int naIsScalar(naRef r)
+{
+    return IS_SCALAR(r);
+}
+
+int naIsVector(naRef r)
+{
+    return IS_VEC(r);
+}
+
+int naIsHash(naRef r)
+{
+    return IS_HASH(r);
+}
+
+int naIsFunc(naRef r)
+{
+    return IS_FUNC(r);
+}
+
+int naIsCode(naRef r)
+{
+    return IS_CODE(r);
+}
+
+int naIsCCode(naRef r)
+{
+    return IS_CCODE(r);
+}
+
+int naIsGhost(naRef r)
+{
+    return IS_GHOST(r);
+}
+
+int naIsIdentical(naRef l, naRef r)
+{
+    return IDENTICAL(l, r);
+}
+
+void naSetUserData(naContext c, void* p)
+{
+    c->userData = p;
+}
+
 void* naGetUserData(naContext c)
 {
     if(c->userData) return c->userData;
