@@ -87,6 +87,10 @@ int main(int argc, char** argv)
 
     if(fread(buf, 1, fdat.st_size, f) != fdat.st_size) {
         fprintf(stderr, "nasal: error in fread()\n");
+
+        free(buf);
+        buf = NULL;
+
         exit(1);
     }
 
@@ -100,10 +104,15 @@ int main(int argc, char** argv)
     if (naIsNil(code)) {
         fprintf(stderr, "Parse error: %s at line %d\n",
                 naGetError(ctx), errLine);
+
+        free(buf);
+        buf = NULL;
+
         exit(1);
     }
 
     free(buf);
+    buf = NULL;
 
     // Make a hash containing the standard library functions.  This
     // will be the namespace for a new script
@@ -155,6 +164,7 @@ int main(int argc, char** argv)
     result = naCall(ctx, code, argc-2, args, naNil(), naNil());
 
     free(args);
+    args = NULL;
 
 #if 0
     // Test for naContinue() feature.  Keep trying until it reports
