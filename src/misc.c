@@ -27,18 +27,24 @@ void naBZero(void* m, int n)
 
 void naTempSave(naContext c, naRef r)
 {
-    int i;
-    if(!IS_OBJ(r)) return;
-    if(c->ntemps >= c->tempsz) {
+    if (!IS_OBJ(r)) {
+        return;
+    }
+
+    if (c->ntemps >= c->tempsz) {
         struct naObj** newtemps;
         c->tempsz *= 2;
         // REVIEW: Memory Leak - 1,024 bytes in 1 blocks are still reachable
         newtemps = naAlloc(c->tempsz * sizeof(struct naObj*));
-        for(i=0; i<c->ntemps; i++)
+
+        for(int i = 0; i < c->ntemps; i++) {
             newtemps[i] = c->temps[i];
+        }
+
         naFree(c->temps);
         c->temps = newtemps;
     }
+
     c->temps[c->ntemps++] = PTR(r).obj;
 }
 
@@ -52,26 +58,47 @@ naRef naObj(int type, struct naObj* o)
 
 int naTrue(naRef r)
 {
-    if(IS_NIL(r)) return 0;
-    if(IS_NUM(r)) return r.num != 0;
-    if(IS_STR(r)) return 1;
+    if (IS_NIL(r)) {
+        return 0;
+    }
+
+    if (IS_NUM(r)) {
+        return r.num != 0;
+    }
+
+    if (IS_STR(r)) {
+        return 1;
+    }
+
     return 0;
 }
 
 naRef naNumValue(naRef n)
 {
+    if (IS_NUM(n)) {
+        return n;
+    }
+
+    if (IS_NIL(n)) {
+        return naNil();
+    }
+
     double d;
-    if(IS_NUM(n)) return n;
-    if(IS_NIL(n)) return naNil();
-    if(IS_STR(n) && naStr_tonum(n, &d))
+
+    if (IS_STR(n) && naStr_tonum(n, &d)) {
         return naNum(d);
+    }
+
     return naNil();
 }
 
 naRef naStringValue(naContext c, naRef r)
 {
-    if(IS_NIL(r) || IS_STR(r)) return r;
-    if(IS_NUM(r)) {
+    if (IS_NIL(r) || IS_STR(r))  {
+        return r;
+    }
+
+    if (IS_NUM(r)) {
         naRef s = naNewString(c);
         naStr_fromnum(s, r.num);
         return s;
@@ -334,7 +361,10 @@ void naSetUserData(naContext c, void* p)
 
 void* naGetUserData(naContext c)
 {
-    if(c->userData) return c->userData;
+    if (c->userData) {
+        return c->userData;
+    }
+
     return c->callParent ? naGetUserData(c->callParent) : 0;
 }
 
