@@ -166,15 +166,6 @@ int main(int argc, char** argv)
     free(args);
     args = NULL;
 
-#if 0
-    // Test for naContinue() feature.  Keep trying until it reports
-    // success.
-    while(naGetError(ctx)) {
-        printf("Err: \"%s\", calling naContinue()...\n", naGetError(ctx));
-        naContinue(ctx);
-    }
-#endif
-
     checkError(ctx);
     return 0;
 }
