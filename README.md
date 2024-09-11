@@ -9,9 +9,11 @@ The C++ bindings and Emesary have been removed as they are tightly coupled to Si
 The reason this has been done is because I'd like to do some experiments with language interpreters, garbage collection, performance, etc. without the distraction of interplay with Boost and SimGear. 
 
 The intention is not to break pre-existing Nasal code. Things under the hood might be changed significantly, but things at a surface-level should still work the same way. Hopefully just faster. 
-The idea is that if any experiments done here turn out to provide some significant benefit to Nasal performance, it could be re-integrated upstream into FlightGear without major modification on either end.
+The idea is that if any experiments done here turn out to provide some significant benefit to Nasal performance, FlightGear could choose to become a downstream consumer of this Nasal intrepreter by adding
+this repository as a dependency via the CMake `FetchContent` feature, and linking against this Nasal. This would be done instead of merging back upstream into FlightGear, as the working belief here is to have Nasal
+broken out into a separate repository/project.
 
-Nasal also doesn't really have a standard specification, like ECMAScript, or the C and C++ standards, nor does it have any documentation. It also lacks tooling like package management, documentation generation, linting, formatting, etc. Or really, any modern convenience adopted by
+Nasal doesn't really have a standard specification, like ECMAScript, or the C and C++ standards, nor does it have any documentation. It also lacks tooling like package management, documentation generation, linting, formatting, etc. Or really, any modern convenience adopted by
 programming languages over the last ~15 years. Usually that would be a reason to stop dead in your tracks and turn the other way, however, it's also a perfect opportunity to experiment with developing that kind of tooling.
 
 Lastly, I've also always wanted a good excuse to read [Crafting Interepreters by Robert Nystrom](https://craftinginterpreters.com/), so I may very well shoehorn knowledge from that book into the codebases see what happens.
@@ -19,136 +21,5 @@ Lastly, I've also always wanted a good excuse to read [Crafting Interepreters by
 Basically this is a big science experiment.
 
 
-# The Nasal language
-
-## Keywords
-
-### Variable Declaration
-| Keyword |
-|---------|
-| `var`   |
-
-### Function Declaration
-| Keyword |
-|---------|
-| `func`  |
-
-### Conditional Control Flow Keywords
-| Keyword |
-|---------|
-| `if`    |
-| `elsif` |
-| `else`  |
-
-### Iterative Control Flow Keywords
-| Keyword   |
-|-----------|
-| `for`     |
-| `foreach` |
-| `while`   |
-
-### Control Flow Keywords
-
-| Keyword    |
-|------------|
-| `continue` |
-| `break`    |
-| `return`   |
-
-### Boolean Literals
-| Keyword |
-|---------|
-| `true`  |
-| `false` |
-
-### Null Value
-| Keyword |
-|---------|
-| `nil`   |
-
-
-## Builtin functions
-In lieu of formal API documentation, in the meantime here is an overview of Nasals built-in functions. Note that built-in functions, or "builtins", are implemented directly in the Nasal intrepreter, they are integral. Some confusion can arise when looking at Nasal from a FlightGear-centric perspective, 
-where there are plenty of functions available in Nasal that aren't listed here. 
-
-That leads us to concept of **extension functions**, which are, simply put, a function that has been added to the language by FlightGear. Some of these are general purpose functions that should be back-ported to become builtins. Others however are of course extremely specific to FlightGear, for example, `findAirportsWithinRange()`.
-
-The nasal builtin functions are implemented in `lib.c` and are denoted by an `f_` prefix, indicating they are implementations of builtin Nasal functions, as opposed to being some other function that belongs to the language internals.
-
-| Nasal Built-in function | Description   |
-| ----------------------- | ------------- |
-| `size()`                |               |
-| `keys()`                |               |
-| `append()`              |               |
-| `pop()`                 |               |
-| `setsize()`             |               |
-| `subvec()`              |               |
-| `vecindex()`            |               |
-| `remove()`              |               |
-| `removeat()`            |               |
-| `delete()`              |               |
-| `int()`                 |               |
-| `num()`                 |               |
-| `str()`                 |               |
-| `streq()`               |               |
-| `cmp()`                 |               |
-| `substr()`              |               |
-| `left()`                |               |
-| `right()`               |               |
-| `chr()`                 |               |
-| `contains()`            |               |
-| `typeof()`              |               |
-| `ghosttype()`           |               |
-| `compile()`             |               |
-| `call()`                |               |
-| `die()`                 |               |
-| `sprintf()`             |               |
-| `caller()`              |               |
-| `closure()`             |               |
-| `find()`                |               |
-| `split()`               |               |
-| `rand()`                |               |
-| `bind()`                |               |
-| `sort()`                |               |
-| `id()`                  |               |
-| `isscalar()`            |               |
-| `isint()`               |               |
-| `isnum()`               |               |
-| `isghost()`             |               |
-| `isstr()`               |               |
-| `isvec()`               |               |
-| `ishash()`              |               |
-| `isfunc()`              |               |
-| `range()`               |               |
-
-## Standard Library
-
-### `math`
-
-| Functions         |
-|-------------------|
-| `math.acos()`     |
-| `math.asin()`     |
-| `math.atan()`     |
-| `math.atan2()`    |
-| `math.ceil()`     |
-| `math.clamp()`    |
-| `math.cos()`      |
-| `math.exp()`      |
-| `math.floor()`    |
-| `math.fmod()`     |
-| `math.ln()`       |
-| `math.periodic()` |
-| `math.pow()`      |
-| `math.round()`    |
-| `math.sin()`      |
-| `math.sqrt()`     |
-| `math.trunc()`    |
-
-**Note:** There standard math library is actually missing a math.abs() function.
-
-| Constants |
-|-----------|
-| `math.pi` |
-| `math.e`  |
-
+## Specification
+You can view a work-in-progress [Nasal specification](SPECIFICATION.md) here. It's not adding or proposing anything new, just codifying the language as-is into a proper specification or standard as most languages tend to have.
