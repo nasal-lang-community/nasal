@@ -16,29 +16,34 @@
 
 void checkError(naContext ctx)
 {
-    int i;
-    if(naGetError(ctx)) {
+    if (naGetError(ctx)) {
         fprintf(stderr, "Runtime error: %s\n  at %s, line %d\n",
                 naGetError(ctx), naStr_data(naGetSourceFile(ctx, 0)),
                 naGetLine(ctx, 0));
 
-        for(i=1; i<naStackDepth(ctx); i++)
+        for(int i = 1; i < naStackDepth(ctx); i++) {
             fprintf(stderr, "  called from: %s, line %d\n",
                     naStr_data(naGetSourceFile(ctx, i)),
                     naGetLine(ctx, i));
+        }
+
         exit(1);
     }
 }
 
+
 // A Nasal extension function (prints its argument list to stdout)
 static naRef print(naContext c, naRef me, int argc, naRef* args)
 {
-    int i;
-    for(i=0; i<argc; i++) {
+    for(int i = 0; i < argc; i++) {
         naRef s = naStringValue(c, args[i]);
-        if(naIsNil(s)) continue;
+        if (naIsNil(s)) {
+            continue;
+        }
+
         fwrite(naStr_data(s), 1, naStr_len(s), stdout);
     }
+
     return naNil();
 }
 
@@ -54,25 +59,32 @@ int main(int argc, char** argv)
     int errLine, i;
     FILE* f;
 
-    if(argc < 2) {
+    if (argc < 2) {
         fprintf(stderr, "nasal: must specify a script to run\n");
         exit(1);
     }
+
     script = argv[1];
 
     // Read the contents of the file into a buffer in memory.
     f = fopen(script, "rb");
-    if(!f) {
+
+    if (!f) {
         snprintf(path, MAX_PATH_LEN-1, SOURCE_DIR"/misc/%s", script);
         f = fopen(path, "rb");
-        if(!f) {
+
+        if (!f) {
             fprintf(stderr, "nasal: could not open input file: %s\n", path);
             exit(1);
         }
+
         script = path;
     }
+
     stat(script, &fdat);
+
     buf = malloc(fdat.st_size);
+
     if(fread(buf, 1, fdat.st_size, f) != fdat.st_size) {
         fprintf(stderr, "nasal: error in fread()\n");
         exit(1);
@@ -84,11 +96,13 @@ int main(int argc, char** argv)
     // Parse the code in the buffer.  The line of a fatal parse error
     // is returned via the pointer.
     code = naParseCode(ctx, NASTR(script), 1, buf, fdat.st_size, &errLine);
-    if(naIsNil(code)) {
+
+    if (naIsNil(code)) {
         fprintf(stderr, "Parse error: %s at line %d\n",
                 naGetError(ctx), errLine);
         exit(1);
     }
+
     free(buf);
 
     // Make a hash containing the standard library functions.  This
@@ -132,11 +146,14 @@ int main(int argc, char** argv)
 
     // Build the arg vector
     args = malloc(sizeof(naRef) * (argc-2));
-    for(i=0; i<argc-2; i++)
+
+    for(int i = 0; i < argc-2; i++) {
         args[i] = NASTR(argv[i+2]);
+    }
 
     // Run it.
     result = naCall(ctx, code, argc-2, args, naNil(), naNil());
+
     free(args);
 
 #if 0
