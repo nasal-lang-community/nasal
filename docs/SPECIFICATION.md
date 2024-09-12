@@ -50,7 +50,7 @@ Nasal, taking syntax cues from C, C++, and JavaScript, is a "semicolon language"
 
 #### Automatic Semicolon Insertion 
 
-Nasal, like JavaScript, has a concept of ASI. This essentialy boils down to the fact that **semicolons can be omitted in the last line of a code block**. The rationale is that semicolons are used to terminate statements, but if the statement appears at the end of a block of code, it is implicitly known that is already the last statement, and so no semicolon is necessary to tell Nasal where the statement terminates.
+Nasal, like JavaScript, has a concept of ASI. This essentialy boils down to the fact that **semicolons can be omitted in the last line of a code block**. The rationale is that semicolons are used to terminate statements, but if the statement appears at the end of a block of code, it is implicitly known that it is already the last statement, and so no semicolon is necessary to tell Nasal where the statement terminates.
 
 ```
 # Normally, statements must be terminated with a semicolon.
