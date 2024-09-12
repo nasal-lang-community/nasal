@@ -62,8 +62,16 @@
 
 #endif /* platform stuff */
 
-enum { T_STR, T_VEC, T_HASH, T_CODE, T_FUNC, T_CCODE, T_GHOST,
-       NUM_NASAL_TYPES }; // V. important that this come last!
+enum {
+    T_STR,
+    T_VEC,
+    T_HASH,
+    T_CODE,
+    T_FUNC,
+    T_CCODE,
+    T_GHOST,
+    NUM_NASAL_TYPES // This must be the last value in the enum
+};
 
 #define IS_NUM(r) (!IS_REF(r))
 #define IS_OBJ(r) (IS_REF(r) && PTR(r).obj != 0)
