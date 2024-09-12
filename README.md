@@ -55,4 +55,4 @@ Nasal has a stack-based virtual machine. This has the benefit of keeping the com
 **This is also a big, lofty goal.**
 
 ## Specification
-You can view a work-in-progress [Nasal specification](SPECIFICATION.md) here. It's not adding or proposing anything new, just codifying the language as-is into a proper specification or standard as most languages tend to have.
+You can view a work-in-progress [Nasal specification](docs/SPECIFICATION.md) here. It's not adding or proposing anything new, just codifying the language as-is into a proper specification or standard as most languages tend to have.
