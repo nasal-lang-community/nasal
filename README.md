@@ -1,5 +1,14 @@
 # not another scripting language
 
+## Credits
+
+Nasal is a programming language over 20 years in the making developed by Andy Ross and countless members of the FlightGear team. The original version can be found on GitHub [here](https://github.com/andyross/nasal). 
+
+
+## About
+
+This project is not official, nor is it endorsed by the authors of Nasal. It's goals are academic and experimental in nature, with the hope potentially furthering the betterment and proliferation of the Nasal language, but strictly _not_ to compete with it. Please don't eat me.
+
 
 ## Rationale
 
@@ -18,16 +27,13 @@ programming languages over the last ~15 years. Usually that would be a reason to
 
 Lastly, I've also always wanted a good excuse to read [Crafting Interepreters by Robert Nystrom](https://craftinginterpreters.com/), so I may very well shoehorn knowledge from that book into the codebases see what happens.
 
-Basically, this is just a big science experiment.
+**Basically, this is just a big science experiment.**
 
 
 ## Specification
-You can view a work-in-progress [Nasal specification](SPECIFICATION.md) here. It's not adding or proposing anything new, just codifying the language as-is into a proper specification or standard as most languages tend to have.
+You can view a work-in-progress (unofficial) Nasal specification [here](https://github.com/nasal-lang-community/specification). It's not adding or proposing anything new, just codifying the language as-is into a proper specification or standard as most languages tend to have.
 
 ## License
 
-The Nasal language was released under the GNU GPLv2. Naturally, this repository, being a fork and a deriviative of the original, follows suit.
+The Nasal language was released under the GNU GPLv2. Naturally, this repository, being a fork and a derivative of the original, follows suit.
 
-## Credits
-
-Nasal is a programming language over 20 years in the making developed by Andy Ross and countless members of the FlightGear team. The original version can be found on GitHub [here](https://github.com/andyross/nasal).
