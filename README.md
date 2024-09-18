@@ -22,13 +22,34 @@ Basically this is a big science experiment.
 
 ## Special areas of interest
 
-### Misc.
+### Formalized specification, test cases, standardization, etc.
 
-- A `const` type would be nice.
+Nasal doesn't really have a standard specification, like ECMAScript, or the C and C++ standards. It has some example code, but it lacks any kind of unit testing.
 
-### Specification
+Pretty much any improvement we would want to make to Nasal would require an accurate baseline to work off of, so one of the first priorities should be rigorously testing
+and benchmarking the current implementation.
 
-Nasal doesn't really have a standard specification, like ECMAScript, or the C and C++ standards, nor does it have any documentation. 
+### Documentation and exploration of Nasal internals
+
+I think the internals of Nasal are only particularly well understood by a very small group of people, probably in the single digits - those who have gone to the trouble of gaining a knowledge of its inner workings
+through experience. Documentation on how the internals of the language work would be very beneficial for knowledge sharing, educational purposes, and getting new developers up to speed.
+
+### Fuzzing
+A cursory attempt at fuzzing the Nasal interpreter has revealed a significant number of segfaults, stack overflows, etc. Right now you can't throw a stone without causing a segfault the moment you walk off the beaten path
+of overtly valid Nasal code. This poses significant problems both in terms of security as well as general correctness. It is no challenge (right now) to trigger one of these critical bugs, it can however be extremely challenging to 
+identify the root cause and fix them.
+
+### Performance improvements
+
+There is another (albeit incompatible) [implementation of Nasal](https://github.com/ValKmjolnir/Nasal-Interpreter) that, upon some cursory benchmarking, was as much as 80% faster than the original Nasal implementation. This is a major indication that there are massive performance gains to be realized.
+
+Hypothesized areas of improvement pertaining to performance include:
+- Nasal has a stack-based virtual machine. This has the benefit of keeping the compiler implementation simple, but is reportedly slower than a register-based virtual machine. Lua made such a migration in 5.0. This would be a very lofty goal.
+- Nasal uses a single-threaded mark/sweep garbage collection system. This is problematic in real-time applications, as it essentially brings things to a halt when its time to take out the trash. 
+  Migrating to generational garbage collection would be a step-up. Supporting multi-threading and migrating to _concurrent_ garbage collection would be a major leap.
+- Nasal appears to push variables as strings onto the stack, which seemingly comes at a significant cost to performance. Implementing symbol encoding or hash-based lookups may improve performance.
+
+
 
 ### Modern ecosystem ammenities:
 
@@ -37,22 +58,12 @@ Nasal lacks the modern convenience adopted by programming languages over the las
   - Documentation of the language and API
   - Documentation generation
   - Linting and formatting tools
+
+### Misc.
+
+- A `const` type would be nice.
   
 Usually a lack of these ammenities would be a reason to stop dead in your tracks and turn the other way, however, it's also a perfect opportunity to experiment with developing that kind of tooling.
-
-### Garbage Collection
-
-Nasal uses a single-threaded mark/sweep garbage collection system. This is problematic in real-time applications, as it essentially brings things to a halt when its time to take out the trash. 
-
-Migrating to generational garbage collection would be a step-up. Supporting multi-threading and migrating to _concurrent_ garbage collection would be a major leap.
-
-**This is a big, lofty goal.**
-
-### Register vs. Stack-based Virtual Machine
-
-Nasal has a stack-based virtual machine. This has the benefit of keeping the compiler implementation simple, but is reportedly slower than a register-based virtual machine. Lua made such a migration in 5.0.
-
-**This is also a big, lofty goal.**
 
 ## Specification
 You can view a work-in-progress [Nasal specification](docs/SPECIFICATION.md) here. It's not adding or proposing anything new, just codifying the language as-is into a proper specification or standard as most languages tend to have.
