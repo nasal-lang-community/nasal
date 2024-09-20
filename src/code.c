@@ -3,22 +3,7 @@
 #include <string.h>
 #include "nasal.h"
 #include "code.h"
-
-////////////////////////////////////////////////////////////////////////
-// Debugging stuff. ////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////
-//#define INTERPRETER_DUMP
-#if !defined(INTERPRETER_DUMP)
-# define DBG(expr) /* noop */
-#else
-# define DBG(expr) expr
-# include <stdio.h>
-# include <stdlib.h>
-#endif
-char* opStringDEBUG(int op);
-void printOpDEBUG(int ip, int op);
-void printStackDEBUG(naContext ctx);
-////////////////////////////////////////////////////////////////////////
+#include "debug.h"
 
 struct Globals* globals = 0;
 
@@ -203,6 +188,11 @@ static void initTemps(naContext c)
     c->temps = naAlloc(c->tempsz * sizeof(struct naObj*));
     c->ntemps = 0;
 }
+
+/**
+ * @brief Initializes a Nasal context
+ * Initializes the values of a naContext struct to their default values.
+ */
 
 static void initContext(naContext c)
 {
@@ -471,8 +461,10 @@ static struct Frame* setupFuncall(naContext ctx, int nargs, int mcall, int named
         return &(ctx->fStack[ctx->fTop-1]);
     }
     
+    // Ensure that Nasal function calls are not allowed to recurse infinitely,
+    // And cause the internal virtual machine's stack to overflow.
     if (ctx->fTop >= MAX_RECURSION) {
-        ERR(ctx, "call stack overflow");
+        ERR(ctx, "Call stack overflow, exceeded maximum recursion depth.");
     }
 
     f = &(ctx->fStack[ctx->fTop]);
@@ -795,8 +787,9 @@ static naRef run(naContext ctx)
 
     while(1) {
         op = BYTECODE(cd)[f->ip++];
-        DBG(printf("Stack Depth: %d\n", ctx->opTop));
-        DBG(printOpDEBUG(f->ip-1, op));
+        DEBUG_LOG("run(): Stack Depth: %d", ctx->opTop);
+        DEBUG_LOG("run(): %s (OpCode #%d)", getOpcodeNames(op), op);
+
         switch(op) {
         case OP_POP:  ctx->opTop--; break;
         case OP_DUP:  PUSH(STK(1)); break;
@@ -910,39 +903,39 @@ static naRef run(naContext ctx)
             // Identical to JMP, except for locking
             naCheckBottleneck();
             f->ip = BYTECODE(cd)[f->ip];
-            DBG(printf("   [Jump to: %d]\n", f->ip));
+            DEBUG_LOG("run(): Jump to frame instruction pointer: %d]", f->ip);
             break;
         case OP_JMP:
             f->ip = BYTECODE(cd)[f->ip];
-            DBG(printf("   [Jump to: %d]\n", f->ip));
+            DEBUG_LOG("[Jump to frame instruction pointer: %d]", f->ip);
             break;
         case OP_JIFEND:
             arg = ARG();
             if (IS_END(STK(1))) {
                 ctx->opTop--; // Pops **ONLY** if it's nil!
                 f->ip = arg;
-                DBG(printf("   [Jump to: %d]\n", f->ip));
+                DEBUG_LOG("Jump to frame instruction pointer: %d]", f->ip);
             }
             break;
         case OP_JIFTRUE:
             arg = ARG();
             if (boolify(ctx, STK(1))) {
                 f->ip = arg;
-                DBG(printf("   [Jump to: %d]\n", f->ip));
+                DEBUG_LOG("[Jump to: %d]", f->ip);
             }
             break;
         case OP_JIFNOT:
             arg = ARG();
             if (!boolify(ctx, STK(1))) {
                 f->ip = arg;
-                DBG(printf("   [Jump to: %d]\n", f->ip));
+                DEBUG_LOG("[Jump to frame instruction pointer: %d]", f->ip);
             }
             break;
         case OP_JIFNOTPOP:
             arg = ARG();
             if (!boolify(ctx, POP())) {
                 f->ip = arg;
-                DBG(printf("   [Jump to: %d]\n", f->ip));
+                DEBUG_LOG("[Jump to frame instruction pointer: %d]", f->ip);
             }
             break;
         case OP_FCALL:  SETFRAME(setupFuncall(ctx, ARG(), 0, 0)); break;
@@ -993,7 +986,7 @@ static naRef run(naContext ctx)
             ERR(ctx, "BUG: bad opcode");
         }
         ctx->ntemps = 0; // reset GC temp vector
-        DBG(printStackDEBUG(ctx));
+        DEBUG(printOperandStack(ctx));
     }
     return naNil(); // unreachable
 }
