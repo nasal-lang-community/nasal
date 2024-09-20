@@ -1,6 +1,9 @@
 #ifndef _DATA_H
 #define _DATA_H
 
+#include <stddef.h>
+#include <stdbool.h>
+
 #include "nasal.h"
 
 #if defined(NASAL_NAN64)
@@ -29,9 +32,14 @@
 
 #define REFMAGIC ((1UL<<48) - 1)
 
-#define _ULP(r) ((unsigned long long)((r).ptr))
-#define REFPTR(r) (_ULP(r) & REFMAGIC)
-#define IS_REF(r) ((_ULP(r) & ~REFMAGIC) == ~REFMAGIC)
+// Function to return the pointer cast as unsigned long long
+static inline unsigned long long _ULP(naRef r) {
+}
+
+// Function to check if it's a reference (IS_REF equivalent)
+static inline bool IS_REF(naRef r) {
+    return ((unsigned long long)(r.ptr) & ~REFMAGIC) == ~REFMAGIC;
+}
 
 // Portability note: this cast from a pointer type to naPtr (a union)
 // is not defined in ISO C, it's a GCC extention that doesn't work on
@@ -201,6 +209,19 @@ void naFree(void* m);
 void* naAlloc(int n);
 void* naRealloc(void* buf, int sz);
 void naBZero(void* m, int n);
+
+/**
+ * @brief A safer version of memcpy that checks for null pointers and buffer overflows.
+ *
+ * @param dest The destination buffer where data will be copied to.
+ * @param src The source buffer from which data will be copied.
+ * @param n The number of bytes to copy from src to dest.
+ * @param dest_size The size of the destination buffer in bytes.
+ * @param src_size The size of the source buffer in bytes.
+ * @return Returns the destination pointer if successful, or NULL if an error occurs.
+ */
+void* naMemcpy(void* dest, const void* src, size_t n, size_t dest_size, size_t src_size);
+
 
 int naTypeSize(int type);
 naRef naObj(int type, struct naObj* o);

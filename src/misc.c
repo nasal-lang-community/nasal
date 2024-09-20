@@ -10,9 +10,12 @@ void naFree(void* m)
     free(m);
 }
 
-void* naAlloc(int n)
-{
-    return malloc(n);
+void* naAlloc(int n) {
+    void* mem = malloc(n);
+    if (mem) {
+        memset(mem, 0, n);
+    }
+    return mem;
 }
 
 void* naRealloc(void* b, int n)
