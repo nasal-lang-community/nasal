@@ -29,6 +29,7 @@ set(SOURCES
     code.h
     data.h
     parse.h
+    util.h
 )
 
 if (NOT WIN32)
