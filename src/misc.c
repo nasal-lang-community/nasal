@@ -275,7 +275,7 @@ naRef naNum(double num)
 
 int naEqual(naRef a, naRef b)
 {
-    double na=0, nb=0;
+
     if(IS_REF(a) && IS_REF(b) && PTR(a).obj == PTR(b).obj)
         return 1; // Object identity (and nil == nil)
     if(IS_NIL(a) || IS_NIL(b))
@@ -285,12 +285,24 @@ int naEqual(naRef a, naRef b)
     if(IS_STR(a) && IS_STR(b) && naStr_equal(a, b))
         return 1; // String equality
 
-    // Numeric equality after conversion
-    if(IS_NUM(a)) { na = a.num; }
-    else if(!(IS_STR(a) && naStr_tonum(a, &na))) { return 0; }
+    double na=0;
+    double nb=0;
 
-    if(IS_NUM(b)) { nb = b.num; }
-    else if(!(IS_STR(b) && naStr_tonum(b, &nb))) { return 0; }
+    // Numeric equality after conversion
+    if(IS_NUM(a)) {
+        na = a.num;
+    }
+    else if(!(IS_STR(a) && naStr_tonum(a, &na))) {
+        return 0;
+    }
+
+    if(IS_NUM(b)) {
+        nb = b.num;
+    }
+
+    else if(!(IS_STR(b) && naStr_tonum(b, &nb))) {
+        return 0;
+    }
 
     return na == nb ? 1 : 0;
 }
