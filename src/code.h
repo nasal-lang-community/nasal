@@ -9,23 +9,62 @@
 #define MAX_RECURSION 128
 #define MAX_MARK_DEPTH 128
 
-// Number of objects (per pool per thread) asked for using naGC_get().
-// The idea is that contexts can "cache" allocations to prevent thread
-// contention on the global pools.  But in practice this interacts
-// very badly with small subcontext calls, which grab huge numbers of
-// cached objects and don't use them, causing far more collections
-// than necessary.  Just leave it at 1 pending a rework of the
-// collector synchronization.
+/**
+ * Number of objects (per pool per thread) asked for using naGC_get().
+ * The idea is that contexts can "cache" allocations to prevent thread
+ * contention on the global pools.  But in practice this interacts
+ * very badly with small subcontext calls, which grab huge numbers of
+ * cached objects and don't use them, causing far more collections
+ * than necessary.  Just leave it at 1 pending a rework of the
+ * collector synchronization.
+*/
 #define OBJ_CACHE_SZ 1
 
-enum {    
+
+/**
+ * @enum Opcodes
+ * @brief This enum contains all of the opcodes implemented by the Nasal virtual machine.
+ */
+enum {
+    /**
+     * @brief Opcode for logical not. Corresponds to the logical not operator, @c !.
+     * This opcode works on a single operand, and evaluates its boolean negation.
+     */
     OP_NOT,
+    /**
+     * @brief Opcode for multiplication. Corresponds to the multiplication operator, @c *.
+     * This opcode works on two operands, producing their product.
+     */
     OP_MUL,
+    /**
+     * @brief Opcode for addition. Corresponds to the addition operator, @c +.
+     * This opcode works on two operands, producing their sum.
+     */
     OP_PLUS,
+    /**
+     * @brief Opcode for subtraction. Corresponds to the subtraction operator, @c -.
+     * This opcode works on two operands, producing their difference.
+     */
     OP_MINUS,
+    /**
+     * @brief Opcode for division. Corresponds to the division operator, @c /.
+     * This opcode works on two operands, producing their quotient.
+     */
     OP_DIV,
+    /**
+     * @brief Opcode for negation. Corresponds to the negation or minus operator, @c -.
+     * This opcode works on one operand, negating the value.
+     */
     OP_NEG,
+    /**
+     * @brief Opcode for string concatenation. Corresponds to the string concatenation operator, @c ~.
+     * This opcode works on two operands, concatenating the value.
+     */
     OP_CAT,
+    /**
+     * @brief Opcode for the less than equality operator. Corresponds to @c <.
+     * This opcode works on two operands.
+     */
     OP_LT,
     OP_LTE,
     OP_GT,
@@ -122,6 +161,9 @@ struct Globals {
     struct Context* allContexts;
 };
 
+/**
+ * @brief Represents the Nasal context containing stacks.
+ */
 struct Context {
     // Stack(s)
     struct Frame fStack[MAX_RECURSION];
