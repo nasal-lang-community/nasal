@@ -15,16 +15,35 @@ static void genExpr(struct Parser* p, struct Token* t);
 static void genExprList(struct Parser* p, struct Token* t);
 static naRef newLambda(struct Parser* p, struct Token* t);
 
+/**
+ * @brief Resizes the bytecode array.
+ * @param p The parser containing the code generator with the bytecode array.
+ */
+static void resizeByteCodeArray(struct Parser* p)
+{
+    // Double the size of the allocated memory for the bytecode array
+    int newSize = p->cg->codeAlloced * 2;
+
+    // Allocate a new buffer with the doubled size
+    ByteCodeArray* buffer = naParseAlloc(p, newSize * sizeof(ByteCodeArray));
+
+    // Copy the existing bytecode to the new buffer
+    naMemcpy(buffer, p->cg->byteCode, p->cg->codeAlloced * sizeof(ByteCodeArray),
+         newSize * sizeof(ByteCodeArray), p->cg->codeAlloced * sizeof(ByteCodeArray));
+
+    // Point the byteCode to the new buffer and update the allocated size
+    p->cg->byteCode = buffer;
+    p->cg->codeAlloced = newSize;
+}
+
 static void emit(struct Parser* p, int val)
 {
+    // Check if resizing the byte code array is needed before emitting the bytecode
     if(p->cg->codesz >= p->cg->codeAlloced) {
-        int i, sz = p->cg->codeAlloced * 2;
-        unsigned short* buf = naParseAlloc(p, sz*sizeof(unsigned short));
-        for(i=0; i<p->cg->codeAlloced; i++) buf[i] = p->cg->byteCode[i];
-        p->cg->byteCode = buf;
-        p->cg->codeAlloced = sz;
+        resizeByteCodeArray(p);
     }
-    p->cg->byteCode[p->cg->codesz++] = (unsigned short)val;
+
+    p->cg->byteCode[p->cg->codesz++] = (ByteCodeArray)val;
 }
 
 static void emitImmediate(struct Parser* p, int val, int arg)
