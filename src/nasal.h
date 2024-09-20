@@ -10,9 +10,11 @@ extern "C" {
 #include "naref.h"
 
 #if __GNUC__ > 2
-/* This marks the function as having no side effects and depending on
+/**
+ * This marks the function as having no side effects and depending on
  * nothing but its arguments, which allows the optimizer to avoid
- * duplicate calls to naNil(). */
+ * duplicate calls to naNil().
+ */
 #define GCC_PURE __attribute__((__pure__))
 #else
 #define GCC_PURE
@@ -29,21 +31,28 @@ typedef naRef (*naCFunction)(naContext ctx, naRef me, int argc, naRef* args);
 typedef naRef (*naCFunctionU)
               (naContext ctx, naRef me, int argc, naRef* args, void* user_data);
 
-// All Nasal code runs under the watch of a naContext:
+/** All Nasal code runs under the watch of a naContext */
 naContext naNewContext();
 void naFreeContext(naContext c);
 
-// Use this when making a call to a new context "underneath" a
-// preexisting context on the same stack.  It allows stack walking to
-// see through the boundary, and eliminates the need to release the
-// mod lock (i.e. must be called with the mod lock held!)
+/**
+ * Use this when making a call to a new context "underneath" a
+ * preexisting context on the same stack.  It allows stack walking to
+ * see through the boundary, and eliminates the need to release the
+ * mod lock (i.e. must be called with the mod lock held!)
+*/
 naContext naSubContext(naContext super);
 
-// The naContext supports a user data pointer that can be used to
-// store data specific to an naCall invocation without exposing it to
-// Nasal as a ghost.  FIXME: this API is semi-dangerous, there is no
-// provision for sharing it, nor for validating the source or type of
-// the pointer returned.
+/**
+ * The naContext supports a user data pointer that can be used to
+ * store data specific to an naCall invocation without exposing it to
+ * Nasal as a ghost.
+
+ * @warning This API is semi-dangerous, there is no
+ * provision for sharing it, nor for validating the source or type of
+ * the pointer returned.
+ */
+
 void naSetUserData(naContext c, void* p);
 void* naGetUserData(naContext c) GCC_PURE;
 
@@ -130,36 +139,51 @@ naRef naCallMethod(naRef code, naRef self, int argc, naRef* args, naRef locals);
 
 typedef void (*naErrorHandler)(naContext);
 
-// Register a handler to be called if an error is raised during the execution of
-// naCallMethodCtx or naCallMethod.
+/**
+ * Register a handler to be called if an error is raised during the execution of
+ * naCallMethodCtx or naCallMethod.
+ */
 naErrorHandler naSetErrorHandler(naErrorHandler cb);
 
-// Throw an error from the current call stack.  This function makes a
-// longjmp call to a handler in naCall() and DOES NOT RETURN.  It is
-// intended for use in library code that cannot otherwise report an
-// error via the return value, and MUST be used carefully.  If in
-// doubt, return naNil() as your error condition.  Works like
-// printf().
+/**
+ * Throw an error from the current call stack. Works like
+ * printf().
+ * @warning This function makes a
+ * longjmp call to a handler in naCall() and DOES NOT RETURN.  It is
+ * intended for use in library code that cannot otherwise report an
+ * error via the return value, and MUST be used carefully.  If in
+ * doubt, return naNil() as your error condition.
+ */
 void naRuntimeError(naContext c, const char* fmt, ...);
 
-// "Re-throws" a runtime error caught from the subcontext.  Acts as a
-// naRuntimeError() called on the parent context.  Does not return.
+/**
+ * "Re-throws" a runtime error caught from the subcontext.  Acts as a
+ * naRuntimeError() called on the parent context.  Does not return.
+ */
 void naRethrowError(naContext subc);
 
-// Retrieve the specified member from the object, respecting the
-// "parents" array as for "object.field".  Returns zero for missing
-// fields.
+/**
+ * Retrieve the specified member from the object, respecting the
+ * "parents" array as for "object.field".  Returns zero for missing
+ * fields.
+ */
 int naMember_get(naContext c, naRef obj, naRef field, naRef* out);
 int naMember_cget(naContext c, naRef obj, const char* field, naRef* out);
 
-// Wrapper around vsnprintf that will allocate the required size
-// by calling vsnprintf with NULL and 0 - and vsnsprintf will measure the
-// required amount of characters which we then allocate and return
-// Returned buffer should be freed by the caller with naFree().
+/**
+ * Wrapper around vsnprintf that will allocate the required size
+ * by calling vsnprintf with NULL and 0 - and vsnsprintf will measure the
+ * required amount of characters which we then allocate and return
+ * Returned buffer should be freed by the caller with naFree().
+*/
+
 char* dosprintf(char* f, ...);
 
-// Returns a hash containing functions from the Nasal standard library
-// Useful for passing as a namespace to an initial function call
+/**
+ * @brief Useful for passing as a namespace to an initial function call
+ * @returns Hash containing functions from the Nasal standard library
+*/
+
 naRef naInit_std(naContext c);
 
 // Ditto, for other core libraries
