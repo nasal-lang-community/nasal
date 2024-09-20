@@ -28,6 +28,28 @@ void naBZero(void* m, int n)
     memset(m, 0, n);
 }
 
+/**
+ * @brief A safer version of memcpy that checks for null pointers and buffer overflows.
+ *
+ * @param dest The destination buffer where data will be copied to.
+ * @param src The source buffer from which data will be copied.
+ * @param n The number of bytes to copy from src to dest.
+ * @param dest_size The size of the destination buffer in bytes.
+ * @param src_size The size of the source buffer in bytes.
+ * @return Returns the destination pointer if successful, or NULL if an error occurs.
+ */
+void* naMemcpy(void* dest, const void* src, size_t n, size_t dest_size, size_t src_size) {
+    if (!dest || !src) {
+        fprintf(stderr, "Null pointer passed to memcpy\n");
+        return NULL;
+    }
+    if (n > dest_size || n > src_size) {
+        fprintf(stderr, "Copy size exceeds buffer size\n");
+        return NULL;
+    }
+    return memcpy(dest, src, n);
+}
+
 void naTempSave(naContext c, naRef r)
 {
     if (!IS_OBJ(r)) {
