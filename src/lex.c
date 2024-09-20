@@ -2,11 +2,22 @@
 
 #include <stdio.h>
 
-// Static table of recognized lexemes in the language
+/**
+ * @struct Lexeme
+ * @brief Data structure containing the string and token for a lexeme.
+ * A lexeme is a basic unit of meaning in a language. In the context of language interpreters and compilers, a lexeme is a sequence of characters that matches a pattern defined by the lexical grammar. Lexemes correspond to tokens that are produced during lexical analysis (scanning) in the first phase of interpreting or compiling a programming language.
+ */
 static const struct Lexeme {
+    /** string! */
     char* str;
+    /** Token ! */
     int   tok;
-} LEXEMES[] = {
+}
+
+/**
+ * @brief Static table of recognized lexemes in the language
+ */
+LEXEMES[] = {
     {"and", TOK_AND},
     {"or", TOK_OR},
     {"!", TOK_NOT},
@@ -70,9 +81,9 @@ static int* findLines(struct Parser* p)
     char* buf = p->buf;
     int sz = p->len/10 + 16;
     int* lines = naParseAlloc(p, (sizeof(int) * sz));
-    int i, j, n=0;
+    int n = 0;
 
-    for(i=0; i<p->len; i++) {
+    for(int i=0; i<p->len; i++) {
         // Not a line ending at all
         if(buf[i] != '\n' && buf[i] != '\r')
             continue;
@@ -86,7 +97,7 @@ static int* findLines(struct Parser* p)
             int* nl;
             sz *= 2;
             nl = naParseAlloc(p, sizeof(int) * sz);
-            for(j=0; j<n; j++) nl[j] = lines[j];
+            for(int j=0; j<n; j++) nl[j] = lines[j];
             lines = nl;
         }
         lines[n++] = i;
@@ -173,11 +184,26 @@ static void newToken(struct Parser* p, int pos, int type,
     p->tree.lastChild = tok;
 }
 
+/**
+ * @brief Convert a hexadecimal character into its corresponding integer value.
+ * @param c A hexadecimal character to convert
+ * @returns The integer value of the hexadecimal character, or -1 if the character is invalid or can't be converted.
+ */
+
 static int hex(char c)
 {
-    if(c >= '0' && c <= '9') return c - '0';
-    if(c >= 'A' && c <= 'F') return c - 'A' + 10;
-    if(c >= 'a' && c <= 'f') return c - 'a' + 10;
+    if(c >= '0' && c <= '9') {
+        return c - '0';
+    }
+
+    if(c >= 'A' && c <= 'F') {
+        return c - 'A' + 10;
+    }
+
+    if(c >= 'a' && c <= 'f') {
+        return c - 'a' + 10;
+    }
+
     return -1;
 }
 
