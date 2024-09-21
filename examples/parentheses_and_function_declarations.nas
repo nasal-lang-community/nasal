@@ -1,5 +1,5 @@
 # This example demonstrates how parentheses work with function declarations in Nasal.
-# For more information, see the section on "Parentheses and Function Declarations" in the Nasal documentation.
+# For more information, read the section on "Parentheses and Function Declaraionts" in the unofficial Nasal specification: https://github.com/nasal-lang-community/specification
 
 # This function takes no arguments, so the parentheses "()" can be omitted from the function declaration:
 functionWithoutArguments = func {

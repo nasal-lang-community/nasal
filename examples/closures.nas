@@ -1,5 +1,5 @@
 # This example demonstrates how Closures work in Nasal. 
-# For more information, read the section on Closures in the Nasal documentation.
+# For more information, read the section on Closures in the unofficial Nasal specification: https://github.com/nasal-lang-community/specification
 
 outer = func {
     var x = 5;

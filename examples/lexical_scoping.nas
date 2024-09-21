@@ -1,6 +1,6 @@
 # This example demonstrates how Lexical Scoping works in Nasal. 
-# For more information, read the section on Lexical Scoping in the Nasal documentation.
-
+# For more information, read the section on Lexical Scoping in the unofficial Nasal specification: https://github.com/nasal-lang-community/nasal-grammar
+ 
 globalVar = 10;
 
 outer = func {
