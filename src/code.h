@@ -9,25 +9,113 @@
 #define MAX_RECURSION 128
 #define MAX_MARK_DEPTH 128
 
-// Number of objects (per pool per thread) asked for using naGC_get().
-// The idea is that contexts can "cache" allocations to prevent thread
-// contention on the global pools.  But in practice this interacts
-// very badly with small subcontext calls, which grab huge numbers of
-// cached objects and don't use them, causing far more collections
-// than necessary.  Just leave it at 1 pending a rework of the
-// collector synchronization.
+/**
+ * Number of objects (per pool per thread) asked for using naGC_get().
+ * The idea is that contexts can "cache" allocations to prevent thread
+ * contention on the global pools.  But in practice this interacts
+ * very badly with small subcontext calls, which grab huge numbers of
+ * cached objects and don't use them, causing far more collections
+ * than necessary.  Just leave it at 1 pending a rework of the
+ * collector synchronization.
+*/
 #define OBJ_CACHE_SZ 1
 
-enum {    
-    OP_NOT, OP_MUL, OP_PLUS, OP_MINUS, OP_DIV, OP_NEG, OP_CAT, OP_LT, OP_LTE,
-    OP_GT, OP_GTE, OP_EQ, OP_NEQ, OP_EACH, OP_JMP, OP_JMPLOOP, OP_JIFNOTPOP,
-    OP_JIFEND, OP_FCALL, OP_MCALL, OP_RETURN, OP_PUSHCONST, OP_PUSHONE,
-    OP_PUSHZERO, OP_PUSHNIL, OP_POP, OP_DUP, OP_XCHG, OP_INSERT, OP_EXTRACT,
-    OP_MEMBER, OP_SETMEMBER, OP_LOCAL, OP_SETLOCAL, OP_NEWVEC, OP_VAPPEND,
-    OP_NEWHASH, OP_HAPPEND, OP_MARK, OP_UNMARK, OP_BREAK, OP_SETSYM, OP_DUP2,
-    OP_INDEX, OP_BREAK2, OP_PUSHEND, OP_JIFTRUE, OP_JIFNOT, OP_FCALLH,
-    OP_MCALLH, OP_XCHG2, OP_UNPACK, OP_SLICE, OP_SLICE2, OP_BIT_AND, OP_BIT_OR,
-    OP_BIT_XOR, OP_BIT_NEG
+
+/**
+ * @enum Opcodes
+ * @brief This enum contains all of the opcodes implemented by the Nasal virtual machine.
+ */
+enum {
+    /**
+     * @brief Opcode for logical not. Corresponds to the logical not operator, @c !.
+     * This opcode works on a single operand, and evaluates its boolean negation.
+     */
+    OP_NOT,
+    /**
+     * @brief Opcode for multiplication. Corresponds to the multiplication operator, @c *.
+     * This opcode works on two operands, producing their product.
+     */
+    OP_MUL,
+    /**
+     * @brief Opcode for addition. Corresponds to the addition operator, @c +.
+     * This opcode works on two operands, producing their sum.
+     */
+    OP_PLUS,
+    /**
+     * @brief Opcode for subtraction. Corresponds to the subtraction operator, @c -.
+     * This opcode works on two operands, producing their difference.
+     */
+    OP_MINUS,
+    /**
+     * @brief Opcode for division. Corresponds to the division operator, @c /.
+     * This opcode works on two operands, producing their quotient.
+     */
+    OP_DIV,
+    /**
+     * @brief Opcode for negation. Corresponds to the negation or minus operator, @c -.
+     * This opcode works on one operand, negating the value.
+     */
+    OP_NEG,
+    /**
+     * @brief Opcode for string concatenation. Corresponds to the string concatenation operator, @c ~.
+     * This opcode works on two operands, concatenating the value.
+     */
+    OP_CAT,
+    /**
+     * @brief Opcode for the less than equality operator. Corresponds to @c <.
+     * This opcode works on two operands.
+     */
+    OP_LT,
+    OP_LTE,
+    OP_GT,
+    OP_GTE,
+    OP_EQ,
+    OP_NEQ,
+    OP_EACH,
+    OP_JMP,
+    OP_JMPLOOP,
+    OP_JIFNOTPOP,
+    OP_JIFEND,
+    OP_FCALL,
+    OP_MCALL,
+    OP_RETURN,
+    OP_PUSHCONST,
+    OP_PUSHONE,
+    OP_PUSHZERO,
+    OP_PUSHNIL,
+    OP_POP,
+    OP_DUP,
+    OP_XCHG,
+    OP_INSERT,
+    OP_EXTRACT,
+    OP_MEMBER,
+    OP_SETMEMBER,
+    OP_LOCAL,
+    OP_SETLOCAL,
+    OP_NEWVEC,
+    OP_VAPPEND,
+    OP_NEWHASH,
+    OP_HAPPEND,
+    OP_MARK,
+    OP_UNMARK,
+    OP_BREAK,
+    OP_SETSYM,
+    OP_DUP2,
+    OP_INDEX,
+    OP_BREAK2,
+    OP_PUSHEND,
+    OP_JIFTRUE,
+    OP_JIFNOT,
+    OP_FCALLH,
+    OP_MCALLH,
+    OP_XCHG2,
+    OP_UNPACK,
+    OP_SLICE,
+    OP_SLICE2,
+    OP_BIT_AND,
+    OP_BIT_OR,
+    OP_BIT_XOR,
+    OP_BIT_NEG
 };
 
 struct Frame {
@@ -73,6 +161,9 @@ struct Globals {
     struct Context* allContexts;
 };
 
+/**
+ * @brief Represents the Nasal context containing stacks.
+ */
 struct Context {
     // Stack(s)
     struct Frame fStack[MAX_RECURSION];

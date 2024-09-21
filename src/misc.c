@@ -10,9 +10,12 @@ void naFree(void* m)
     free(m);
 }
 
-void* naAlloc(int n)
-{
-    return malloc(n);
+void* naAlloc(int n) {
+    void* mem = malloc(n);
+    if (mem) {
+        memset(mem, 0, n);
+    }
+    return mem;
 }
 
 void* naRealloc(void* b, int n)
@@ -23,6 +26,28 @@ void* naRealloc(void* b, int n)
 void naBZero(void* m, int n)
 {
     memset(m, 0, n);
+}
+
+/**
+ * @brief A safer version of memcpy that checks for null pointers and buffer overflows.
+ *
+ * @param dest The destination buffer where data will be copied to.
+ * @param src The source buffer from which data will be copied.
+ * @param n The number of bytes to copy from src to dest.
+ * @param dest_size The size of the destination buffer in bytes.
+ * @param src_size The size of the source buffer in bytes.
+ * @return Returns the destination pointer if successful, or NULL if an error occurs.
+ */
+void* naMemcpy(void* dest, const void* src, size_t n, size_t dest_size, size_t src_size) {
+    if (!dest || !src) {
+        fprintf(stderr, "Null pointer passed to memcpy\n");
+        return NULL;
+    }
+    if (n > dest_size || n > src_size) {
+        fprintf(stderr, "Copy size exceeds buffer size\n");
+        return NULL;
+    }
+    return memcpy(dest, src, n);
 }
 
 void naTempSave(naContext c, naRef r)
@@ -250,7 +275,7 @@ naRef naNum(double num)
 
 int naEqual(naRef a, naRef b)
 {
-    double na=0, nb=0;
+
     if(IS_REF(a) && IS_REF(b) && PTR(a).obj == PTR(b).obj)
         return 1; // Object identity (and nil == nil)
     if(IS_NIL(a) || IS_NIL(b))
@@ -260,12 +285,24 @@ int naEqual(naRef a, naRef b)
     if(IS_STR(a) && IS_STR(b) && naStr_equal(a, b))
         return 1; // String equality
 
-    // Numeric equality after conversion
-    if(IS_NUM(a)) { na = a.num; }
-    else if(!(IS_STR(a) && naStr_tonum(a, &na))) { return 0; }
+    double na=0;
+    double nb=0;
 
-    if(IS_NUM(b)) { nb = b.num; }
-    else if(!(IS_STR(b) && naStr_tonum(b, &nb))) { return 0; }
+    // Numeric equality after conversion
+    if(IS_NUM(a)) {
+        na = a.num;
+    }
+    else if(!(IS_STR(a) && naStr_tonum(a, &na))) {
+        return 0;
+    }
+
+    if(IS_NUM(b)) {
+        nb = b.num;
+    }
+
+    else if(!(IS_STR(b) && naStr_tonum(b, &nb))) {
+        return 0;
+    }
 
     return na == nb ? 1 : 0;
 }

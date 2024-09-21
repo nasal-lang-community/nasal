@@ -3,22 +3,7 @@
 #include <string.h>
 #include "nasal.h"
 #include "code.h"
-
-////////////////////////////////////////////////////////////////////////
-// Debugging stuff. ////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////
-//#define INTERPRETER_DUMP
-#if !defined(INTERPRETER_DUMP)
-# define DBG(expr) /* noop */
-#else
-# define DBG(expr) expr
-# include <stdio.h>
-# include <stdlib.h>
-#endif
-char* opStringDEBUG(int op);
-void printOpDEBUG(int ip, int op);
-void printStackDEBUG(naContext ctx);
-////////////////////////////////////////////////////////////////////////
+#include "debug.h"
 
 struct Globals* globals = 0;
 
@@ -52,8 +37,13 @@ static naRef endToken()
 
 static int boolify(naContext ctx, naRef r)
 {
-    if(IS_NUM(r)) return r.num != 0;
-    if(IS_NIL(r) || IS_END(r)) return 0;
+    if (IS_NUM(r)) {
+        return r.num != 0;
+    }
+
+    if (IS_NIL(r) || IS_END(r)) {
+        return 0;
+    }
 
     // empty vectors are false, non-empty vectors are true
     if (IS_VEC(r)) {
@@ -65,13 +55,23 @@ static int boolify(naContext ctx, naRef r)
         return naHash_size(r) > 0;
     }
 
-    if(IS_STR(r)) {
+    if (IS_STR(r)) {
         double d;
-        if(naStr_len(r) == 0) return 0;
-        if(naStr_tonum(r, &d)) return d != 0;
-        else return 1;
+        if (naStr_len(r) == 0) {
+            return 0;
+        }
+
+        if (naStr_tonum(r, &d)) {
+            return d != 0;
+        } else {
+            return 1;
+        }
     }
-    if (IS_OBJ(r)) return 1;
+
+    if (IS_OBJ(r)) {
+        return 1;
+    }
+
     ERR(ctx, "non-scalar used in boolean context");
     return 0;
 }
@@ -79,20 +79,32 @@ static int boolify(naContext ctx, naRef r)
 static double numify(naContext ctx, naRef o)
 {
     double n;
-    if(IS_NUM(o)) return o.num;
-    else if(IS_NIL(o)) ERR(ctx, "nil used in numeric context");
-    else if(!IS_STR(o)) ERR(ctx, "non-scalar in numeric context");
-    else if(naStr_tonum(o, &n)) return n;
-    else naRuntimeError( ctx,
-                         "non-numeric string in numeric context: '%s'",
-                         naStr_data(o) );
+
+    if (IS_NUM(o)) {
+        return o.num;
+    } else if (IS_NIL(o)) {
+        ERR(ctx, "nil used in numeric context");
+    } else if (!IS_STR(o)) {
+        ERR(ctx, "non-scalar in numeric context");
+    } else if (naStr_tonum(o, &n)) {
+        return n;
+    } else {
+        naRuntimeError( ctx, "non-numeric string in numeric context: '%s'", naStr_data(o) );
+    }
+
     return 0;
 }
 
 static naRef stringify(naContext ctx, naRef r)
 {
-    if(IS_STR(r)) return r;
-    if(IS_NUM(r)) return naStr_fromnum(naNewString(ctx), r.num);
+    if (IS_STR(r)) {
+        return r;
+    }
+
+    if (IS_NUM(r)) {
+        return naStr_fromnum(naNewString(ctx), r.num);
+    }
+
     ERR(ctx, "non-scalar in string context");
     return naNil();
 }
@@ -100,49 +112,75 @@ static naRef stringify(naContext ctx, naRef r)
 static int checkVec(naContext ctx, naRef vec, naRef idx)
 {
     int i = (int)numify(ctx, idx);
-    if(i < 0) i += naVec_size(vec);
-    if(i < 0 || i >= naVec_size(vec))
+
+    if (i < 0) {
+        i += naVec_size(vec);
+    }
+
+    if (i < 0 || i >= naVec_size(vec)) {
         naRuntimeError(ctx, "vector index %d out of bounds (size: %d)",
                        i, naVec_size(vec));
+    }
+
     return i;
 }
 
 static int checkStr(naContext ctx, naRef str, naRef idx)
 {
     int i = (int)numify(ctx, idx);
-    if(i < 0) i += naStr_len(str);
-    if(i < 0 || i >= naStr_len(str))
+
+    if (i < 0) {
+        i += naStr_len(str);
+    }
+
+    if (i < 0 || i >= naStr_len(str)) {
         naRuntimeError(ctx, "string index %d out of bounds (size: %d)",
                        i, naStr_len(str));
+    }
+
     return i;
 }
 
 static naRef containerGet(naContext ctx, naRef box, naRef key)
 {
     naRef result = naNil();
-    if(!IS_SCALAR(key)) ERR(ctx, "container index not scalar");
-    if(IS_HASH(box))
+
+    if (!IS_SCALAR(key)) {
+        ERR(ctx, "container index not scalar");
+    }
+
+    if (IS_HASH(box)) {
         naHash_get(box, key, &result);
-    else if(IS_VEC(box))
+    } else if (IS_VEC(box)) {
         result = naVec_get(box, checkVec(ctx, box, key));
-    else if(IS_STR(box))
+    } else if (IS_STR(box)) {
         result = naNum((unsigned char)naStr_data(box)[checkStr(ctx, box, key)]);
-    else
+    } else {
         ERR(ctx, "extract from non-container");
+    }
+
     return result;
 }
 
 static void containerSet(naContext ctx, naRef box, naRef key, naRef val)
 {
-    if(!IS_SCALAR(key))   ERR(ctx, "container index not scalar");
-    else if(IS_HASH(box)) naHash_set(box, key, val);
-    else if(IS_VEC(box))  naVec_set(box, checkVec(ctx, box, key), val);
-    else if(IS_STR(box)) {
-        if(PTR(box).str->hashcode)
+    if (!IS_SCALAR(key)) {
+        ERR(ctx, "container index not scalar");
+    } else if(IS_HASH(box)) {
+        naHash_set(box, key, val);
+    } else if(IS_VEC(box)) {
+        naVec_set(box, checkVec(ctx, box, key), val);
+    } else if(IS_STR(box)) {
+        if(PTR(box).str->hashcode) {
             ERR(ctx, "cannot change immutable string");
+        }
+
         naStr_data(box)[checkStr(ctx, box, key)] = (char)numify(ctx, val);
-    } else ERR(ctx, "insert into non-container");
+    } else {
+        ERR(ctx, "insert into non-container");
+    }
 }
+
 
 static void initTemps(naContext c)
 {
@@ -150,6 +188,11 @@ static void initTemps(naContext c)
     c->temps = naAlloc(c->tempsz * sizeof(struct naObj*));
     c->ntemps = 0;
 }
+
+/**
+ * @brief Initializes a Nasal context
+ * Initializes the values of a naContext struct to their default values.
+ */
 
 static void initContext(naContext c)
 {
@@ -210,11 +253,13 @@ static void initGlobals()
 naContext naNewContext()
 {
     naContext c;
-    if(globals == 0)
+    if (globals == 0) {
         initGlobals();
+    }
 
     LOCK();
     c = globals->freeContexts;
+
     if(c) {
         globals->freeContexts = c->nextFree;
         c->nextFree = 0;
@@ -232,13 +277,18 @@ naContext naNewContext()
         globals->allContexts = c;
         UNLOCK();
     }
+
     return c;
 }
 
 naContext naSubContext(naContext super)
 {
     naContext ctx = naNewContext();
-    if(super->callChild) naFreeContext(super->callChild);
+
+    if (super->callChild) {
+        naFreeContext(super->callChild);
+    }
+
     ctx->callParent = super;
     super->callChild = ctx;
     return ctx;
@@ -247,8 +297,14 @@ naContext naSubContext(naContext super)
 void naFreeContext(naContext c)
 {
     c->ntemps = 0;
-    if(c->callChild) naFreeContext(c->callChild);
-    if(c->callParent) c->callParent->callChild = 0;
+    if (c->callChild) {
+        naFreeContext(c->callChild);
+    }
+
+    if (c->callParent) {
+        c->callParent->callChild = 0;
+    }
+
     LOCK();
 
     // 2019-09-21
@@ -285,9 +341,11 @@ static void setupArgs(naContext ctx, struct Frame* f, naRef* args, int nargs)
     struct naCode* c = PTR(PTR(f->func).func->code).code;
 
     // Set the argument symbols, and put any remaining args in a vector
-    if(nargs < c->nArgs)
+    if(nargs < c->nArgs) {
         naRuntimeError(ctx, "too few function args (have %d need %d)",
             nargs, c->nArgs);
+    }
+
     for(i=0; i<c->nArgs; i++)
         naiHash_newsym(PTR(f->locals).hash,
                       &c->constants[ARGSYMS(c)[i]], &args[i]);
@@ -301,7 +359,8 @@ static void setupArgs(naContext ctx, struct Frame* f, naRef* args, int nargs)
                       &val);
     }
     args += c->nOptArgs;
-    if(c->needArgVector || nargs > 0) {
+
+    if (c->needArgVector || nargs > 0) {
         naRef argv = naNewVector(ctx);
         naVec_setsize(ctx, argv, nargs > 0 ? nargs : 0);
         for(i=0; i<nargs; i++)
@@ -314,17 +373,22 @@ static void checkNamedArgs(naContext ctx, struct naCode* c, struct naHash* h)
 {
     int i;
     naRef sym, rest, dummy;
+
     for(i=0; i<c->nArgs; i++) {
         sym = c->constants[ARGSYMS(c)[i]];
-        if(!naiHash_sym(h, PTR(sym).str, &dummy))
+        if (!naiHash_sym(h, PTR(sym).str, &dummy)) {
             naRuntimeError(ctx, "Missing arg: %s", naStr_data(sym));
+        }
     }
+
     for(i=0; i<c->nOptArgs; i++) {
         sym = c->constants[OPTARGSYMS(c)[i]];
-        if(!naiHash_sym(h, PTR(sym).str, &dummy))
+        if (!naiHash_sym(h, PTR(sym).str, &dummy)) {
             naiHash_newsym(h, &sym, &c->constants[OPTARGVALS(c)[i]]);
+        }
     }
-    if(c->needArgVector) {
+
+    if (c->needArgVector) {
         sym = c->constants[c->restArgSym];
         if(!naiHash_sym(h, PTR(sym).str, &dummy)) {
             rest = naNewVector(ctx);
@@ -338,17 +402,29 @@ static void checkNamedArgs(naContext ctx, struct naCode* c, struct naHash* h)
 flightgear/src/Scripting/NasalSys_private.hxx. */
 static char* NasalRefDescription(naRef val)
 {
-    if (naIsNil(val))           return dosprintf("nil");
-    else if (naIsNum(val))      return dosprintf("num: %f", naNumValue(val).num);
-    else if (naIsString(val))   return dosprintf("string: %s", naStr_data(val));
-    else if (naIsScalar(val))   return dosprintf("scalar");
-    else if (naIsVector(val))   return dosprintf("vector");
-    else if (naIsHash(val))     return dosprintf("hash");
-    else if (naIsFunc(val))     return dosprintf("func");
-    else if (naIsCode(val))     return dosprintf("code");
-    else if (naIsCCode(val))    return dosprintf("ccode");
-    else if (naIsGhost(val))    return dosprintf("ghost");
-    else return dosprintf("?");
+    if (naIsNil(val)) {
+        return dosprintf("nil");
+    } else if (naIsNum(val)) {
+        return dosprintf("num: %f", naNumValue(val).num);
+    } else if (naIsString(val)) {
+        return dosprintf("string: %s", naStr_data(val));
+    } else if (naIsScalar(val)) {
+        return dosprintf("scalar");
+    } else if (naIsVector(val)) {
+        return dosprintf("vector");
+    } else if (naIsHash(val)) {
+        return dosprintf("hash");
+    } else if (naIsFunc(val)) {
+        return dosprintf("func");
+    } else if (naIsCode(val)) {
+        return dosprintf("code");
+    } else if (naIsCCode(val)) {
+        return dosprintf("ccode");
+    } else if (naIsGhost(val)) {
+        return dosprintf("ghost");
+    } else {
+        return dosprintf("?");
+    }
 }
 
 static struct Frame* setupFuncall(naContext ctx, int nargs, int mcall, int named)
@@ -359,7 +435,7 @@ static struct Frame* setupFuncall(naContext ctx, int nargs, int mcall, int named
 
     args = &ctx->opStack[opf];
     func = ctx->opStack[--opf];
-    if(!IS_FUNC(func)) {
+    if (!IS_FUNC(func)) {
         char* func_description = NasalRefDescription(func);
         char* description = dosprintf("function/method call on uncallable object: %s", func_description);
         ERR(ctx, description);
@@ -367,10 +443,14 @@ static struct Frame* setupFuncall(naContext ctx, int nargs, int mcall, int named
         naFree(func_description);
     }
     code = PTR(func).func->code;
-    if(mcall) obj = ctx->opStack[--opf];
+
+    if (mcall) {
+        obj = ctx->opStack[--opf];
+    }
+
     ctx->opFrame = opf;
 
-    if(IS_CCODE(code)) {
+    if (IS_CCODE(code)) {
         struct naCCode *ccode = PTR(code).ccode;
         naRef result = ccode->fptru
                      ? (*ccode->fptru)(ctx, obj, nargs, args, ccode->user_data)
@@ -381,18 +461,27 @@ static struct Frame* setupFuncall(naContext ctx, int nargs, int mcall, int named
         return &(ctx->fStack[ctx->fTop-1]);
     }
     
-    if(ctx->fTop >= MAX_RECURSION) ERR(ctx, "call stack overflow");
-    
+    // Ensure that Nasal function calls are not allowed to recurse infinitely,
+    // And cause the internal virtual machine's stack to overflow.
+    if (ctx->fTop >= MAX_RECURSION) {
+        ERR(ctx, "Call stack overflow, exceeded maximum recursion depth.");
+    }
+
     f = &(ctx->fStack[ctx->fTop]);
     f->locals = named ? args[0] : naNewHash(ctx);
     f->func = func;
     f->ip = 0;
     f->bp = ctx->opFrame;
 
-    if(mcall) naHash_set(f->locals, globals->meRef, obj);
+    if (mcall) {
+        naHash_set(f->locals, globals->meRef, obj);
+    }
 
-    if(named) checkNamedArgs(ctx, PTR(code).code, PTR(f->locals).hash);
-    else      setupArgs(ctx, f, args, nargs);
+    if (named) {
+        checkNamedArgs(ctx, PTR(code).code, PTR(f->locals).hash);
+    } else {
+        setupArgs(ctx, f, args, nargs);
+    }
 
     ctx->fTop++;
     ctx->opTop = f->bp; /* Pop the stack last, to avoid GC lossage */
@@ -407,7 +496,7 @@ static naRef evalEquality(int op, naRef ra, naRef rb)
 
 static naRef evalCat(naContext ctx, naRef l, naRef r)
 {
-    if(IS_VEC(l) && IS_VEC(r)) {
+    if (IS_VEC(l) && IS_VEC(r)) {
         int i, ls = naVec_size(l), rs = naVec_size(r);
         naRef v = naNewVector(ctx);
         naVec_setsize(ctx, v, ls + rs);
@@ -443,9 +532,13 @@ static int getClosure(struct naFunc* c, naRef sym, naRef* result)
 static naRef getLocal2(naContext ctx, struct Frame* f, naRef sym)
 {
     naRef result;
-    if(!naHash_get(f->locals, sym, &result))
-        if(!getClosure(PTR(f->func).func, sym, &result))
+
+    if (!naHash_get(f->locals, sym, &result)) {
+        if(!getClosure(PTR(f->func).func, sym, &result)) {
             naRuntimeError(ctx, "undefined symbol: %s", naStr_data(sym));
+        }
+    }
+
     return result;
 }
 
@@ -453,14 +546,21 @@ static void getLocal(naContext ctx, struct Frame* f, naRef* sym, naRef* out)
 {
     struct naFunc* func;
     struct naStr* str = PTR(*sym).str;
-    if(naiHash_sym(PTR(f->locals).hash, str, out))
+
+    if(naiHash_sym(PTR(f->locals).hash, str, out)) {
         return;
+    }
+
     func = PTR(f->func).func;
     while(func && PTR(func->namespace).hash) {
-        if(naiHash_sym(PTR(func->namespace).hash, str, out))
+
+        if (naiHash_sym(PTR(func->namespace).hash, str, out)) {
             return;
+        }
+
         func = PTR(func->next).func;
     }
+
     // Now do it again using the more general naHash_get().  This will
     // only be necessary if something has created the value in the
     // namespace using the more generic hash syntax
@@ -471,8 +571,14 @@ static void getLocal(naContext ctx, struct Frame* f, naRef* sym, naRef* out)
 static int setClosure(naRef func, naRef sym, naRef val)
 {
     struct naFunc* c = PTR(func).func;
-    if(c == 0) return 0;
-    if(naiHash_tryset(c->namespace, sym, val)) return 1;
+    if (c == 0) {
+        return 0;
+    }
+
+    if (naiHash_tryset(c->namespace, sym, val)) {
+        return 1;
+    }
+
     return setClosure(c->next, sym, val);
 }
 
@@ -480,15 +586,19 @@ static void setSymbol(struct Frame* f, naRef sym, naRef val)
 {
     // Try the locals first, if not already there try the closures in
     // order.  Finally put it in the locals if nothing matched.
-    if(!naiHash_tryset(f->locals, sym, val))
-        if(!setClosure(f->func, sym, val))
-            naHash_set(f->locals, sym, val);
+    if (!naiHash_tryset(f->locals, sym, val) || !setClosure(f->func, sym, val)) { 
+        naHash_set(f->locals, sym, val);
+    }
 }
 
 static const char* ghostGetMember(naContext ctx, naRef obj, naRef field, naRef* out)
 {
     naGhostType* gtype = PTR(obj).ghost->gtype;
-    if (!gtype->get_member) return "ghost does not support member access";
+
+    if (!gtype->get_member) {
+        return "ghost does not support member access";
+    }
+
     return gtype->get_member(ctx, PTR(obj).ghost->ptr, field, out);
 }
     
@@ -501,25 +611,44 @@ static const char* getMember_r(naContext ctx, naRef obj, naRef field, naRef* out
     int i;
     naRef p;
     struct VecRec* pv;
-    if(--count < 0) return "too many parents";
+
+    if (--count < 0) {
+        return "too many parents";
+    }
 
     if (IS_GHOST(obj)) {
-        if (ghostGetMember(ctx, obj, field, out)) return "";
-        if(!ghostGetMember(ctx, obj, globals->parentsRef, &p)) return 0;
+        if (ghostGetMember(ctx, obj, field, out)) {
+            return "";
+        }
+
+        if(!ghostGetMember(ctx, obj, globals->parentsRef, &p)) {
+            return 0;
+        }
     } else if (IS_HASH(obj)) {
-        if(naHash_get(obj, field, out)) return "";
-        if(!naHash_get(obj, globals->parentsRef, &p)) return 0;
+        if (naHash_get(obj, field, out)) {
+            return "";
+        }
+        if (!naHash_get(obj, globals->parentsRef, &p)) {
+            return 0;
+        }
     } else if (IS_STR(obj) ) {
         return getMember_r(ctx, getStringMethods(ctx), field, out, count);
     } else {
         return "non-objects have no members";
     }
     
-    if(!IS_VEC(p)) return "object \"parents\" field not vector";
+    if (!IS_VEC(p)) {
+        return "object \"parents\" field not vector";
+    }
+
     pv = PTR(p).vec->rec;
+
     for(i=0; pv && i<pv->size; i++) {
         const char* err = getMember_r(ctx, pv->array[i], field, out, count);
-        if(err) return err; /* either an error or success */
+
+        if (err) {
+            return err; /* either an error or success */
+        }
     }
     return 0;
 }
@@ -528,8 +657,14 @@ static void getMember(naContext ctx, naRef obj, naRef fld,
                       naRef* result, int count)
 {
     const char* err = getMember_r(ctx, obj, fld, result, count);
-    if(!err)   naRuntimeError(ctx, "No such member: %s", naStr_data(fld));
-    if(err[0]) naRuntimeError(ctx, err);
+
+    if (!err) {
+        naRuntimeError(ctx, "No such member: %s", naStr_data(fld));
+    }
+
+    if (err[0]) {
+        naRuntimeError(ctx, err);
+    }
 }
 
 static void setMember(naContext ctx, naRef obj, naRef fld, naRef value)
@@ -542,7 +677,10 @@ static void setMember(naContext ctx, naRef obj, naRef fld, naRef value)
         return;
     }
     
-    if(!IS_HASH(obj)) naRuntimeError(ctx, "non-object does not have member: %s", naStr_data(fld));
+    if (!IS_HASH(obj)) {
+        naRuntimeError(ctx, "non-object does not have member: %s", naStr_data(fld));
+    }
+
     naHash_set(obj, fld, value);
     ctx->opTop -= 2;
 }
@@ -560,11 +698,16 @@ static void evalEach(naContext ctx, int useIndex)
 {
     int idx = (int)(ctx->opStack[ctx->opTop-1].num);
     naRef vec = ctx->opStack[ctx->opTop-2];
-    if(!IS_VEC(vec)) ERR(ctx, "foreach enumeration of non-vector");
-    if(!PTR(vec).vec->rec || idx >= PTR(vec).vec->rec->size) {
+
+    if (!IS_VEC(vec)) {
+        ERR(ctx, "foreach enumeration of non-vector");
+    }
+
+    if (!PTR(vec).vec->rec || idx >= PTR(vec).vec->rec->size) {
         PUSH(endToken());
         return;
     }
+
     ctx->opStack[ctx->opTop-1].num = idx+1; // modify in place
     PUSH(useIndex ? naNum(idx) : naVec_get(vec, idx));
 }
@@ -572,8 +715,11 @@ static void evalEach(naContext ctx, int useIndex)
 static void evalUnpack(naContext ctx, int count)
 {
     naRef vec = ctx->opStack[--ctx->opTop];
-    if(!IS_VEC(vec) || naVec_size(vec) < count)
+
+    if (!IS_VEC(vec) || naVec_size(vec) < count) {
         ERR(ctx, "short or invalid multi-assignment vector");
+    }
+
     while(count--) PUSH(naVec_get(vec, count));
 }
 
@@ -581,17 +727,28 @@ static void evalUnpack(naContext ctx, int count)
 static int vbound(naContext ctx, naRef v, naRef ir, int end)
 {
     int sz=naVec_size(v), i = IS_NIL(ir) ? (end ? -1 : 0) : numify(ctx, ir);
-    if(IS_NIL(ir) && !sz) return i;
-    if(i < 0) i += sz;
-    if(i < 0 || i >= sz)
-        naRuntimeError(ctx, "slice index %d out of bounds (size: %d)",
-                       i, sz);
+
+    if (IS_NIL(ir) && !sz) {
+        return i;
+    }
+
+    if (i < 0) {
+        i += sz;
+    }
+
+    if (i < 0 || i >= sz) {
+        naRuntimeError(ctx, "slice index %d out of bounds (size: %d)", i, sz);
+    }
+
     return i;
 }
 
 static void evalSlice(naContext ctx, naRef src, naRef dst, naRef idx)
 {
-    if(!IS_VEC(src)) ERR(ctx, "cannot slice non-vector");
+    if (!IS_VEC(src)) {
+        ERR(ctx, "cannot slice non-vector");
+    }
+
     naVec_append(dst, naVec_get(src, checkVec(ctx, src, idx)));
 }
  
@@ -599,8 +756,13 @@ static void evalSlice2(naContext ctx, naRef src, naRef dst,
                        naRef start, naRef endr)
 {
     int i, end;
-    if(!IS_VEC(src)) ERR(ctx, "cannot slice non-vector");
+
+    if (!IS_VEC(src)) {
+        ERR(ctx, "cannot slice non-vector");
+    }
+
     end = vbound(ctx, src, endr, 1);
+
     for(i = vbound(ctx, src, start, 0); i<=end; i++)
         naVec_append(dst, naVec_get(src, i));
 }
@@ -625,8 +787,9 @@ static naRef run(naContext ctx)
 
     while(1) {
         op = BYTECODE(cd)[f->ip++];
-        DBG(printf("Stack Depth: %d\n", ctx->opTop));
-        DBG(printOpDEBUG(f->ip-1, op));
+        DEBUG_LOG("run(): Stack Depth: %d", ctx->opTop);
+        DEBUG_LOG("run(): %s (OpCode #%d)", getOpcodeNames(op), op);
+
         switch(op) {
         case OP_POP:  ctx->opTop--; break;
         case OP_DUP:  PUSH(STK(1)); break;
@@ -740,39 +903,39 @@ static naRef run(naContext ctx)
             // Identical to JMP, except for locking
             naCheckBottleneck();
             f->ip = BYTECODE(cd)[f->ip];
-            DBG(printf("   [Jump to: %d]\n", f->ip));
+            DEBUG_LOG("run(): Jump to frame instruction pointer: %d]", f->ip);
             break;
         case OP_JMP:
             f->ip = BYTECODE(cd)[f->ip];
-            DBG(printf("   [Jump to: %d]\n", f->ip));
+            DEBUG_LOG("[Jump to frame instruction pointer: %d]", f->ip);
             break;
         case OP_JIFEND:
             arg = ARG();
-            if(IS_END(STK(1))) {
+            if (IS_END(STK(1))) {
                 ctx->opTop--; // Pops **ONLY** if it's nil!
                 f->ip = arg;
-                DBG(printf("   [Jump to: %d]\n", f->ip));
+                DEBUG_LOG("Jump to frame instruction pointer: %d]", f->ip);
             }
             break;
         case OP_JIFTRUE:
             arg = ARG();
-            if(boolify(ctx, STK(1))) {
+            if (boolify(ctx, STK(1))) {
                 f->ip = arg;
-                DBG(printf("   [Jump to: %d]\n", f->ip));
+                DEBUG_LOG("[Jump to: %d]", f->ip);
             }
             break;
         case OP_JIFNOT:
             arg = ARG();
-            if(!boolify(ctx, STK(1))) {
+            if (!boolify(ctx, STK(1))) {
                 f->ip = arg;
-                DBG(printf("   [Jump to: %d]\n", f->ip));
+                DEBUG_LOG("[Jump to frame instruction pointer: %d]", f->ip);
             }
             break;
         case OP_JIFNOTPOP:
             arg = ARG();
-            if(!boolify(ctx, POP())) {
+            if (!boolify(ctx, POP())) {
                 f->ip = arg;
-                DBG(printf("   [Jump to: %d]\n", f->ip));
+                DEBUG_LOG("[Jump to frame instruction pointer: %d]", f->ip);
             }
             break;
         case OP_FCALL:  SETFRAME(setupFuncall(ctx, ARG(), 0, 0)); break;
@@ -782,8 +945,15 @@ static naRef run(naContext ctx)
         case OP_RETURN:
             a = STK(1);
             ctx->dieArg = naNil();
-            if(ctx->callChild) naFreeContext(ctx->callChild);
-            if(--ctx->fTop <= 0) return a;
+
+            if (ctx->callChild) {
+                naFreeContext(ctx->callChild);
+            }
+
+            if (--ctx->fTop <= 0) {
+                return a;
+            }
+
             ctx->opTop = f->bp + 1; // restore the correct opstack frame!
             STK(1) = a;
             FIXFRAME();
@@ -795,8 +965,9 @@ static naRef run(naContext ctx)
             evalEach(ctx, 1);
             break;
         case OP_MARK: // save stack state (e.g. "setjmp")
-            if(ctx->markTop >= MAX_MARK_DEPTH)
+            if (ctx->markTop >= MAX_MARK_DEPTH) {
                 ERR(ctx, "mark stack overflow");
+            }
             ctx->markStack[ctx->markTop++] = ctx->opTop;
             break;
         case OP_UNMARK: // pop stack state set by mark
@@ -815,7 +986,7 @@ static naRef run(naContext ctx)
             ERR(ctx, "BUG: bad opcode");
         }
         ctx->ntemps = 0; // reset GC temp vector
-        DBG(printStackDEBUG(ctx));
+        DEBUG(printOperandStack(ctx));
     }
     return naNil(); // unreachable
 }
@@ -863,7 +1034,11 @@ int naStackDepth(naContext ctx)
 static int findFrame(naContext ctx, naContext* out, int fn)
 {
     int sd = naStackDepth(ctx->callChild);
-    if(fn < sd) return findFrame(ctx->callChild, out, fn);
+
+    if (fn < sd) {
+        return findFrame(ctx->callChild, out, fn);
+    }
+
     *out = ctx;
     return ctx->fTop - 1 - (fn - sd);
 }
@@ -873,13 +1048,16 @@ int naGetLine(naContext ctx, int frame)
     struct Frame* f;
     frame = findFrame(ctx, &ctx, frame);
     f = &ctx->fStack[frame];
-    if(IS_FUNC(f->func) && IS_CODE(PTR(f->func).func->code)) {
+    if (IS_FUNC(f->func) && IS_CODE(PTR(f->func).func->code)) {
+
         struct naCode* c = PTR(PTR(f->func).func->code).code;
         unsigned short* p = LINEIPS(c) + c->nLines - 2;
+
         while(p >= LINEIPS(c) && p[0] > f->ip)
             p -= 2;
         return p[1];
     }
+
     return -1;
 }
 
@@ -887,19 +1065,24 @@ naRef naGetSourceFile(naContext ctx, int frame)
 {
     naRef f;
     frame = findFrame(ctx, &ctx, frame);
+
     if (frame >= 0) {
         f = ctx->fStack[frame].func;
         f = PTR(f).func->code;
-        if (!IS_NIL(f) && PTR(f).code)
+
+        if (!IS_NIL(f) && PTR(f).code) {
             return PTR(f).code->srcFile;
+        }
     }
     return naNil();
 }
 
 char* naGetError(naContext ctx)
 {
-    if(IS_STR(ctx->dieArg))
+    if (IS_STR(ctx->dieArg)) {
         return naStr_data(ctx->dieArg);
+    }
+
     return ctx->error[0] ? ctx->error : 0;
 }
 
@@ -914,11 +1097,13 @@ naRef naBindFunction(naContext ctx, naRef code, naRef closure)
 naRef naBindToContext(naContext ctx, naRef code)
 {
     naRef func = naNewFunc(ctx, code);
-    if(ctx->fTop) {
+
+    if (ctx->fTop) {
         struct Frame* f = &ctx->fStack[ctx->fTop-1];
         PTR(func).func->namespace = f->locals;
         PTR(func).func->next = f->func;
     }
+
     return func;
 }
 
@@ -927,7 +1112,10 @@ naRef naCall(naContext ctx, naRef func, int argc, naRef* args,
 {
     int i;
     naRef result;
-    if(!ctx->callParent) naModLock();
+
+    if (!ctx->callParent) {
+        naModLock();
+    }
 
     // We might have to allocate objects, which can call the GC.  But
     // the call isn't on the Nasal stack yet, so the GC won't find our
@@ -939,12 +1127,16 @@ naRef naCall(naContext ctx, naRef func, int argc, naRef* args,
     naTempSave(ctx, locals);
 
     // naRuntimeError() calls end up here:
-    if(setjmp(ctx->jumpHandle)) {
-        if(!ctx->callParent) naModUnlock();
+    if (setjmp(ctx->jumpHandle)) {
+
+        if (!ctx->callParent) {
+            naModUnlock();
+        }
+
         return naNil();
     }
 
-    if(IS_CCODE(PTR(func).func->code)) {
+    if (IS_CCODE(PTR(func).func->code)) {
         struct naCCode *ccode = PTR(PTR(func).func->code).ccode;
         result = ccode->fptru
                ? (*ccode->fptru)(ctx, obj, argc, args, ccode->user_data)
@@ -953,14 +1145,18 @@ naRef naCall(naContext ctx, naRef func, int argc, naRef* args,
         return result;
     }
 
-    if(IS_NIL(locals))
+    if (IS_NIL(locals)) {
         locals = naNewHash(ctx);
-    if(!IS_FUNC(func)) {
+    }
+
+    if (!IS_FUNC(func)) {
         func = naNewFunc(ctx, func);
         PTR(func).func->namespace = locals;
     }
-    if(!IS_NIL(obj))
+
+    if (!IS_NIL(obj)) {
         naHash_set(locals, globals->meRef, obj);
+    }
 
     ctx->opTop = ctx->markTop = 0;
     ctx->fTop = 1;
@@ -973,21 +1169,33 @@ naRef naCall(naContext ctx, naRef func, int argc, naRef* args,
     setupArgs(ctx, ctx->fStack, args, argc);
 
     result = run(ctx);
-    if(!ctx->callParent) naModUnlock();
+
+    if (!ctx->callParent) {
+        naModUnlock();
+    }
+
     return result;
 }
 
 naRef naContinue(naContext ctx)
 {
     naRef result;
-    if(!ctx->callParent) naModLock();
+
+    if (!ctx->callParent) {
+        naModLock();
+    }
 
     ctx->dieArg = naNil();
     ctx->error[0] = 0;
 
-    if(setjmp(ctx->jumpHandle)) {
-        if(!ctx->callParent) naModUnlock();
-        else naRethrowError(ctx);
+    if (setjmp(ctx->jumpHandle)) {
+
+        if (!ctx->callParent) {
+            naModUnlock();
+        } else {
+            naRethrowError(ctx);
+        }
+
         return naNil();
     }
 
@@ -1003,10 +1211,16 @@ naRef naContinue(naContext ctx)
     // because its original C stack was longjmp'd out of existence,
     // there is no one left to free the context, so we have to do it.
     // This is fragile, but unfortunately required.
-    if(ctx->callChild) naFreeContext(ctx->callChild);
+    if (ctx->callChild) {
+        naFreeContext(ctx->callChild);
+    }
 
     result = run(ctx);
-    if(!ctx->callParent) naModUnlock();
+
+    if (!ctx->callParent) {
+        naModUnlock();
+    }
+
     return result;
 }
 
@@ -1039,13 +1253,24 @@ naRef naCallMethodCtx( naContext ctx,
                        naRef locals )
 {
     naRef result;
-    if(call_count) naModUnlock();
+
+    if (call_count) {
+        naModUnlock();
+    }
+
     call_count++;
     result = naCall(ctx, code, argc, args, self, locals);
-    if(naGetError(ctx) && error_handler)
+
+    if (naGetError(ctx) && error_handler) {
         error_handler(ctx);
+    }
+
     call_count--;
-    if(call_count) naModLock();
+
+    if (call_count) {
+        naModLock();
+    }
+
     return result;
 }
 

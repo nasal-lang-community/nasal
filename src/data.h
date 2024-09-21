@@ -1,6 +1,10 @@
 #ifndef _DATA_H
 #define _DATA_H
 
+#include <stddef.h>
+#include <stdbool.h>
+#include <stdint.h>
+
 #include "nasal.h"
 
 #if defined(NASAL_NAN64)
@@ -29,20 +33,17 @@
 
 #define REFMAGIC ((1UL<<48) - 1)
 
-#define _ULP(r) ((unsigned long long)((r).ptr))
-#define REFPTR(r) (_ULP(r) & REFMAGIC)
-#define IS_REF(r) ((_ULP(r) & ~REFMAGIC) == ~REFMAGIC)
+// Function to check if it's a reference (IS_REF equivalent)
+static inline bool IS_REF(naRef r) {
+    return ((uintptr_t)(r.ptr) & ~REFMAGIC) == ~REFMAGIC;
+}
 
-// Portability note: this cast from a pointer type to naPtr (a union)
-// is not defined in ISO C, it's a GCC extention that doesn't work on
-// (at least) either the SUNWspro or MSVC compilers.  Unfortunately,
-// fixing this would require abandoning the naPtr union for a set of
-// PTR_<type>() macros, which is a ton of work and a lot of extra
-// code.  And as all enabled 64 bit platforms are gcc anyway, and the
-// 32 bit fallback code works in any case, this is acceptable for now.
-#define PTR(r) ((naPtr)((struct naObj*)(_ULP(r) & REFMAGIC)))
+static inline naPtr PTR(naRef r) {
+    uintptr_t masked_ptr = (uintptr_t)(r.ptr) & REFMAGIC;
+    return (naPtr)((struct naObj *)masked_ptr);
+}
 
-#define SETPTR(r, p) ((r).ptr = (void*)((unsigned long long)p | ~REFMAGIC))
+#define SETPTR(r, p) ((r).ptr = (void*)((uintptr_t)p | ~REFMAGIC))
 #define SETNUM(r, n) ((r).num = n)
 
 #else
@@ -62,11 +63,26 @@
 
 #endif /* platform stuff */
 
-enum { T_STR, T_VEC, T_HASH, T_CODE, T_FUNC, T_CCODE, T_GHOST,
-       NUM_NASAL_TYPES }; // V. important that this come last!
+enum {
+    T_STR,
+    T_VEC,
+    T_HASH,
+    T_CODE,
+    T_FUNC,
+    T_CCODE,
+    T_GHOST,
+    NUM_NASAL_TYPES // This must be the last value in the enum
+};
 
-#define IS_NUM(r) (!IS_REF(r))
-#define IS_OBJ(r) (IS_REF(r) && PTR(r).obj != 0)
+// Replace the IS_NUM macro with an equivalent inline function
+static inline bool IS_NUM(naRef r) {
+    return !IS_REF(r);
+}
+
+static inline bool IS_OBJ(naRef r) {
+    return IS_REF(r) && PTR(r).obj != 0;
+}
+
 #define IS_NIL(r) (IS_REF(r) && PTR(r).obj == 0)
 #define IS_STR(r) (IS_OBJ(r) && PTR(r).obj->type == T_STR)
 #define IS_VEC(r) (IS_OBJ(r) && PTR(r).obj->type == T_VEC)
@@ -193,6 +209,19 @@ void naFree(void* m);
 void* naAlloc(int n);
 void* naRealloc(void* buf, int sz);
 void naBZero(void* m, int n);
+
+/**
+ * @brief A safer version of memcpy that checks for null pointers and buffer overflows.
+ *
+ * @param dest The destination buffer where data will be copied to.
+ * @param src The source buffer from which data will be copied.
+ * @param n The number of bytes to copy from src to dest.
+ * @param dest_size The size of the destination buffer in bytes.
+ * @param src_size The size of the source buffer in bytes.
+ * @return Returns the destination pointer if successful, or NULL if an error occurs.
+ */
+void* naMemcpy(void* dest, const void* src, size_t n, size_t dest_size, size_t src_size);
+
 
 int naTypeSize(int type);
 naRef naObj(int type, struct naObj* o);

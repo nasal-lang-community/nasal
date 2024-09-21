@@ -1,12 +1,24 @@
 #include "parse.h"
 
 #include <stdio.h>
+#include <string.h>
 
-// Static table of recognized lexemes in the language
+/**
+ * @struct Lexeme
+ * @brief Data structure containing the string and token for a lexeme.
+ * A lexeme is a basic unit of meaning in a language. In the context of language interpreters and compilers, a lexeme is a sequence of characters that matches a pattern defined by the lexical grammar. Lexemes correspond to tokens that are produced during lexical analysis (scanning) in the first phase of interpreting or compiling a programming language.
+ */
 static const struct Lexeme {
+    /** string! */
     char* str;
+    /** Token ! */
     int   tok;
-} LEXEMES[] = {
+}
+
+/**
+ * @brief Static table of recognized lexemes in the language
+ */
+LEXEMES[] = {
     {"and", TOK_AND},
     {"or", TOK_OR},
     {"!", TOK_NOT},
@@ -70,9 +82,9 @@ static int* findLines(struct Parser* p)
     char* buf = p->buf;
     int sz = p->len/10 + 16;
     int* lines = naParseAlloc(p, (sizeof(int) * sz));
-    int i, j, n=0;
+    int n = 0;
 
-    for(i=0; i<p->len; i++) {
+    for(int i=0; i<p->len; i++) {
         // Not a line ending at all
         if(buf[i] != '\n' && buf[i] != '\r')
             continue;
@@ -86,7 +98,7 @@ static int* findLines(struct Parser* p)
             int* nl;
             sz *= 2;
             nl = naParseAlloc(p, sizeof(int) * sz);
-            for(j=0; j<n; j++) nl[j] = lines[j];
+            for(int j=0; j<n; j++) nl[j] = lines[j];
             lines = nl;
         }
         lines[n++] = i;
@@ -173,11 +185,26 @@ static void newToken(struct Parser* p, int pos, int type,
     p->tree.lastChild = tok;
 }
 
+/**
+ * @brief Convert a hexadecimal character into its corresponding integer value.
+ * @param c A hexadecimal character to convert
+ * @returns The integer value of the hexadecimal character, or -1 if the character is invalid or can't be converted.
+ */
+
 static int hex(char c)
 {
-    if(c >= '0' && c <= '9') return c - '0';
-    if(c >= 'A' && c <= 'F') return c - 'A' + 10;
-    if(c >= 'a' && c <= 'f') return c - 'a' + 10;
+    if(c >= '0' && c <= '9') {
+        return c - '0';
+    }
+
+    if(c >= 'A' && c <= 'F') {
+        return c - 'A' + 10;
+    }
+
+    if(c >= 'a' && c <= 'f') {
+        return c - 'a' + 10;
+    }
+
     return -1;
 }
 
@@ -280,7 +307,11 @@ static int lexIntLiteral(struct Parser* p, int index, int base)
     return i;
 }
 
-#define ISNUM(c) ((c) >= '0' && (c) <= '9')
+
+inline static bool ISNUM(char c) {
+    return ((c) >= '0' && (c) <= '9');
+}
+
 #define ISHEX(c) (ISNUM(c) || ((c)>='a' && (c)<='f') || ((c)>='A' && (c)<='F'))
 #define NUMSTART(c) (ISNUM(c) || (c) == '+' || (c) == '-')
 static int lexNumLiteral(struct Parser* p, int index)
@@ -323,18 +354,69 @@ static int trySymbol(struct Parser* p, int start)
     return i-start;
 }
 
-// Returns the length of lexeme l if the buffer prefix matches, or
-// else zero.
+/**
+ * @brief Returns the length of lexeme `l` if the buffer prefix matches, or zero if there was
+ * no match.
+ *
+ * This function compares the beginning of the buffer `buf` with the lexeme `l`. If the
+ * buffer starts with the lexeme `l`, the function returns the length of the lexeme. If there
+ * is no match, the function returns 0. The function is designed to safely handle both
+ * null-terminated lexeme strings and non-null-terminated buffers by using explicit length
+ * checking.
+ *
+ * @param buf A pointer to the buffer containing the input data. The buffer is not required to be
+ * null-terminated, but the caller must ensure that `buf` points to valid memory.
+ * @param len The length of the buffer, specifying how many bytes are available for reading
+ * from `buf`. The caller is responsible for ensuring that `len` accurately reflects the
+ * number of valid bytes in `buf`.
+ * @param l A pointer to the lexeme string. The lexeme must be a null-terminated string.
+ *
+ * @return The length of the lexeme `l` if the buffer prefix matches, or 0 if there was no match.
+ *
+ * @warning
+ * - The buffer `buf` is not required to be null-terminated, but the caller must ensure that
+ *   `buf` is valid and that `len` correctly reflects the length of the valid memory. Failure
+ *   to do so may result in undefined behavior, such as buffer over-read or memory access
+ *   violations.
+ * - The lexeme `l` must be null-terminated. If `l` is not null-terminated, functions like
+ *   `strlen()` and `strncmp()` will read beyond the intended bounds, leading to undefined
+ *   behavior.
+ * - If `buf` or `l` is `NULL`, the function will safely return 0, but the caller should ensure
+ *   that valid pointers are passed to avoid runtime errors.
+ * - The caller must ensure that `len` is large enough to cover any comparison with the lexeme.
+ * @note
+ * - If `len` is smaller than the length of the lexeme `l`, the function will return 0, as no
+ *   valid match can occur.
+ * - The function does not handle cases where `buf` contains multibyte characters (e.g., UTF-8
+ *   encoded strings), as it compares single bytes from `buf` and `l`.
+ * - This function is designed for comparing lexemes and buffer prefixes; it should not be used
+ *   for general-purpose string searching or comparisons of arbitrary buffer contents beyond
+ *   lexeme matching.
+ */
 static int matchLexeme(char* buf, int len, char* l)
 {
-    int i;
-    for(i=0; i<len; i++) {
-        if(l[i] == 0)      return i;
-        if(l[i] != buf[i]) return 0;
+    // Null check
+    if (buf == NULL || l == NULL) {
+        return 0;
     }
-    // Ran out of buffer.  This is still OK if we're also at the end
-    // of the lexeme.
-    if(l[i] == 0) return i;
+
+    // Check if the lexeme is an empty string
+    if (l[0] == '\0') {
+        return 0;
+    }
+
+    // Get length of the lexeme
+    int lex_len = strlen(l);
+
+    // Early exit if buffer length is shorter than lexeme length
+    if (len < lex_len) {
+        return 0;
+    }
+
+    if (strncmp(buf, l, lex_len) == 0 ) {
+        return lex_len;
+    }
+
     return 0;
 }
 
@@ -363,6 +445,26 @@ static int tryLexemes(struct Parser* p, int index, int* lexemeOut)
     return best;
 }
 
+// Helper function to check if a character is whitespace
+inline static bool isWhitespace(char c) {
+    return (c == ' ' || c == '\t' || c == '\n' || c == '\r' || c == '\f' || c == '\v');
+}
+
+// Helper function to handle comments
+int handleComment(struct Parser* p, int i) {
+    return lineEnd(p, getLine(p, i));
+}
+
+// Helper function to check if a character is a string delimiter
+inline static bool isStringDelimiter(char c) {
+    return (c == '\'' || c == '"' || c == '`');
+}
+
+// Helper function to check if the current character is part of a number
+inline static bool isNumeric(char c, struct Parser* p, int i) {
+    return ISNUM(c) || (c == '.' && (i + 1) < p->len && ISNUM(p->buf[i + 1]));
+}
+
 void naLex(struct Parser* p)
 {
     int i = 0;
@@ -372,21 +474,28 @@ void naLex(struct Parser* p)
 
         // Whitespace, comments and string literals have obvious
         // markers and can be handled by a switch:
-        int handled = 1;
-        switch(c) {
-        case ' ': case '\t': case '\n': case '\r': case '\f': case '\v':
+        bool handled = true;
+
+        if (isWhitespace(c)) {
             i++;
-            break;
-        case '#':
-            i = lineEnd(p, getLine(p, i));
-            break;
-        case '\'': case '"': case '`':
+            continue;
+        }
+
+        // TODO: Comments should probably be defined somewhere
+        // as a token, not here as a magic character.
+        if (c == '#') {
+            i = handleComment(p, i);
+            continue;
+        }
+
+        if (isStringDelimiter(c)) {
             i = lexStringLiteral(p, i, c);
-            break;
-        default:
-            if(ISNUM(c) || (c == '.' && (i+1)<p->len && ISNUM(p->buf[i+1])))
-                i = lexNumLiteral(p, i);
-            else handled = 0;
+            continue;
+        }
+
+        if (isNumeric(c, p, i)) {
+            i = lexNumLiteral(p, i);
+            continue;
         }
 
         // Lexemes and symbols are a little more complicated.  Pick
@@ -395,35 +504,38 @@ void naLex(struct Parser* p)
         // don't want a lexeme match to clobber the beginning of a
         // symbol (e.g. "orchid").  If neither match, we have a bad
         // character in the mix.
-        if(!handled) {
-            int symlen=0, lexlen=0, lexeme=-1;
-            lexlen = tryLexemes(p, i, &lexeme);
-            if((c>='A' && c<='Z') || (c>='a' && c<='z') || (c=='_'))
-                symlen = trySymbol(p, i);
-            if(lexlen && lexlen >= symlen) {
-                newToken(p, i, LEXEMES[lexeme].tok, 0, 0, 0);
-                i += lexlen;
-            } else if(symlen) {
-                newToken(p, i, TOK_SYMBOL, p->buf+i, symlen, 0);
-                i += symlen;
-            } else {
-                //const char* line_begin = p->buf;
-                int line = 1;
-                int column = 0;
-                for (int j=0; j<i; ++j) {
-                    if (p->buf[j] == '\n') {
-                        line += 1;
-                        column = 0;
-                        //line_begin = p->buf + j + 1;
-                    }
-                    else {
-                        column += 1;
-                    }
+        int symlen = 0;
+        int lexlen = 0;
+        int lexeme = -1;
+
+        lexlen = tryLexemes(p, i, &lexeme);
+
+        if((c>='A' && c<='Z') || (c>='a' && c<='z') || (c=='_')) {
+            symlen = trySymbol(p, i);
+        }
+        if(lexlen && lexlen >= symlen) {
+            newToken(p, i, LEXEMES[lexeme].tok, 0, 0, 0);
+            i += lexlen;
+        } else if(symlen) {
+            newToken(p, i, TOK_SYMBOL, p->buf+i, symlen, 0);
+            i += symlen;
+        } else {
+            //const char* line_begin = p->buf;
+            int line = 1;
+            int column = 0;
+            for (int j=0; j<i; ++j) {
+                if (p->buf[j] == '\n') {
+                    line += 1;
+                    column = 0;
+                    //line_begin = p->buf + j + 1;
                 }
-                fprintf(stderr, "%s:%i: illegal character 0x%x at line=%i column=%i.\n",
-                        __FILE__, __LINE__, c, line, column);
-                error(p, "illegal character", i);
+                else {
+                    column += 1;
+                }
             }
+            fprintf(stderr, "%s:%i: illegal character 0x%x at line=%i column=%i.\n",
+                    __FILE__, __LINE__, c, line, column);
+            error(p, "illegal character", i);
         }
     }
 }
