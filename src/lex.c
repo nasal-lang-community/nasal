@@ -306,7 +306,11 @@ static int lexIntLiteral(struct Parser* p, int index, int base)
     return i;
 }
 
-#define ISNUM(c) ((c) >= '0' && (c) <= '9')
+
+inline static bool ISNUM(char c) {
+    return ((c) >= '0' && (c) <= '9');
+}
+
 #define ISHEX(c) (ISNUM(c) || ((c)>='a' && (c)<='f') || ((c)>='A' && (c)<='F'))
 #define NUMSTART(c) (ISNUM(c) || (c) == '+' || (c) == '-')
 static int lexNumLiteral(struct Parser* p, int index)
@@ -389,6 +393,26 @@ static int tryLexemes(struct Parser* p, int index, int* lexemeOut)
     return best;
 }
 
+// Helper function to check if a character is whitespace
+inline static bool isWhitespace(char c) {
+    return (c == ' ' || c == '\t' || c == '\n' || c == '\r' || c == '\f' || c == '\v');
+}
+
+// Helper function to handle comments
+int handleComment(struct Parser* p, int i) {
+    return lineEnd(p, getLine(p, i));
+}
+
+// Helper function to check if a character is a string delimiter
+inline static bool isStringDelimiter(char c) {
+    return (c == '\'' || c == '"' || c == '`');
+}
+
+// Helper function to check if the current character is part of a number
+inline static bool isNumeric(char c, struct Parser* p, int i) {
+    return ISNUM(c) || (c == '.' && (i + 1) < p->len && ISNUM(p->buf[i + 1]));
+}
+
 void naLex(struct Parser* p)
 {
     int i = 0;
@@ -398,21 +422,26 @@ void naLex(struct Parser* p)
 
         // Whitespace, comments and string literals have obvious
         // markers and can be handled by a switch:
-        int handled = 1;
-        switch(c) {
-        case ' ': case '\t': case '\n': case '\r': case '\f': case '\v':
+        bool handled = true;
+
+        if (isWhitespace(c)) {
             i++;
-            break;
-        case '#':
-            i = lineEnd(p, getLine(p, i));
-            break;
-        case '\'': case '"': case '`':
+            continue;
+        }
+
+        if (c == '#') {
+            i = handleComment(p, i);
+            continue;
+        }
+
+        if (isStringDelimiter(c)) {
             i = lexStringLiteral(p, i, c);
-            break;
-        default:
-            if(ISNUM(c) || (c == '.' && (i+1)<p->len && ISNUM(p->buf[i+1])))
-                i = lexNumLiteral(p, i);
-            else handled = 0;
+            continue;
+        }
+
+        if (isNumeric(c, p, i)) {
+            i = lexNumLiteral(p, i);
+            continue;
         }
 
         // Lexemes and symbols are a little more complicated.  Pick
@@ -421,35 +450,38 @@ void naLex(struct Parser* p)
         // don't want a lexeme match to clobber the beginning of a
         // symbol (e.g. "orchid").  If neither match, we have a bad
         // character in the mix.
-        if(!handled) {
-            int symlen=0, lexlen=0, lexeme=-1;
-            lexlen = tryLexemes(p, i, &lexeme);
-            if((c>='A' && c<='Z') || (c>='a' && c<='z') || (c=='_'))
-                symlen = trySymbol(p, i);
-            if(lexlen && lexlen >= symlen) {
-                newToken(p, i, LEXEMES[lexeme].tok, 0, 0, 0);
-                i += lexlen;
-            } else if(symlen) {
-                newToken(p, i, TOK_SYMBOL, p->buf+i, symlen, 0);
-                i += symlen;
-            } else {
-                //const char* line_begin = p->buf;
-                int line = 1;
-                int column = 0;
-                for (int j=0; j<i; ++j) {
-                    if (p->buf[j] == '\n') {
-                        line += 1;
-                        column = 0;
-                        //line_begin = p->buf + j + 1;
-                    }
-                    else {
-                        column += 1;
-                    }
+        int symlen = 0;
+        int lexlen = 0;
+        int lexeme = -1;
+
+        lexlen = tryLexemes(p, i, &lexeme);
+
+        if((c>='A' && c<='Z') || (c>='a' && c<='z') || (c=='_')) {
+            symlen = trySymbol(p, i);
+        }
+        if(lexlen && lexlen >= symlen) {
+            newToken(p, i, LEXEMES[lexeme].tok, 0, 0, 0);
+            i += lexlen;
+        } else if(symlen) {
+            newToken(p, i, TOK_SYMBOL, p->buf+i, symlen, 0);
+            i += symlen;
+        } else {
+            //const char* line_begin = p->buf;
+            int line = 1;
+            int column = 0;
+            for (int j=0; j<i; ++j) {
+                if (p->buf[j] == '\n') {
+                    line += 1;
+                    column = 0;
+                    //line_begin = p->buf + j + 1;
                 }
-                fprintf(stderr, "%s:%i: illegal character 0x%x at line=%i column=%i.\n",
-                        __FILE__, __LINE__, c, line, column);
-                error(p, "illegal character", i);
+                else {
+                    column += 1;
+                }
             }
+            fprintf(stderr, "%s:%i: illegal character 0x%x at line=%i column=%i.\n",
+                    __FILE__, __LINE__, c, line, column);
+            error(p, "illegal character", i);
         }
     }
 }

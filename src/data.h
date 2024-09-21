@@ -34,6 +34,7 @@
 
 // Function to return the pointer cast as unsigned long long
 static inline unsigned long long _ULP(naRef r) {
+    return (unsigned long long)(r.ptr);
 }
 
 // Function to check if it's a reference (IS_REF equivalent)
