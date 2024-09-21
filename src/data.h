@@ -3,6 +3,7 @@
 
 #include <stddef.h>
 #include <stdbool.h>
+#include <stdint.h>
 
 #include "nasal.h"
 
@@ -32,26 +33,17 @@
 
 #define REFMAGIC ((1UL<<48) - 1)
 
-// Function to return the pointer cast as unsigned long long
-static inline unsigned long long _ULP(naRef r) {
-    return (unsigned long long)(r.ptr);
-}
-
 // Function to check if it's a reference (IS_REF equivalent)
 static inline bool IS_REF(naRef r) {
-    return ((unsigned long long)(r.ptr) & ~REFMAGIC) == ~REFMAGIC;
+    return ((uintptr_t)(r.ptr) & ~REFMAGIC) == ~REFMAGIC;
 }
 
-// Portability note: this cast from a pointer type to naPtr (a union)
-// is not defined in ISO C, it's a GCC extention that doesn't work on
-// (at least) either the SUNWspro or MSVC compilers.  Unfortunately,
-// fixing this would require abandoning the naPtr union for a set of
-// PTR_<type>() macros, which is a ton of work and a lot of extra
-// code.  And as all enabled 64 bit platforms are gcc anyway, and the
-// 32 bit fallback code works in any case, this is acceptable for now.
-#define PTR(r) ((naPtr)((struct naObj*)(_ULP(r) & REFMAGIC)))
+static inline naPtr PTR(naRef r) {
+    uintptr_t masked_ptr = (uintptr_t)(r.ptr) & REFMAGIC;
+    return (naPtr)((struct naObj *)masked_ptr);
+}
 
-#define SETPTR(r, p) ((r).ptr = (void*)((unsigned long long)p | ~REFMAGIC))
+#define SETPTR(r, p) ((r).ptr = (void*)((uintptr_t)p | ~REFMAGIC))
 #define SETNUM(r, n) ((r).num = n)
 
 #else
@@ -82,8 +74,15 @@ enum {
     NUM_NASAL_TYPES // This must be the last value in the enum
 };
 
-#define IS_NUM(r) (!IS_REF(r))
-#define IS_OBJ(r) (IS_REF(r) && PTR(r).obj != 0)
+// Replace the IS_NUM macro with an equivalent inline function
+static inline bool IS_NUM(naRef r) {
+    return !IS_REF(r);
+}
+
+static inline bool IS_OBJ(naRef r) {
+    return IS_REF(r) && PTR(r).obj != 0;
+}
+
 #define IS_NIL(r) (IS_REF(r) && PTR(r).obj == 0)
 #define IS_STR(r) (IS_OBJ(r) && PTR(r).obj->type == T_STR)
 #define IS_VEC(r) (IS_OBJ(r) && PTR(r).obj->type == T_VEC)

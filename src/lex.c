@@ -1,6 +1,7 @@
 #include "parse.h"
 
 #include <stdio.h>
+#include <string.h>
 
 /**
  * @struct Lexeme
@@ -353,18 +354,69 @@ static int trySymbol(struct Parser* p, int start)
     return i-start;
 }
 
-// Returns the length of lexeme l if the buffer prefix matches, or
-// else zero.
+/**
+ * @brief Returns the length of lexeme `l` if the buffer prefix matches, or zero if there was
+ * no match.
+ *
+ * This function compares the beginning of the buffer `buf` with the lexeme `l`. If the
+ * buffer starts with the lexeme `l`, the function returns the length of the lexeme. If there
+ * is no match, the function returns 0. The function is designed to safely handle both
+ * null-terminated lexeme strings and non-null-terminated buffers by using explicit length
+ * checking.
+ *
+ * @param buf A pointer to the buffer containing the input data. The buffer is not required to be
+ * null-terminated, but the caller must ensure that `buf` points to valid memory.
+ * @param len The length of the buffer, specifying how many bytes are available for reading
+ * from `buf`. The caller is responsible for ensuring that `len` accurately reflects the
+ * number of valid bytes in `buf`.
+ * @param l A pointer to the lexeme string. The lexeme must be a null-terminated string.
+ *
+ * @return The length of the lexeme `l` if the buffer prefix matches, or 0 if there was no match.
+ *
+ * @warning
+ * - The buffer `buf` is not required to be null-terminated, but the caller must ensure that
+ *   `buf` is valid and that `len` correctly reflects the length of the valid memory. Failure
+ *   to do so may result in undefined behavior, such as buffer over-read or memory access
+ *   violations.
+ * - The lexeme `l` must be null-terminated. If `l` is not null-terminated, functions like
+ *   `strlen()` and `strncmp()` will read beyond the intended bounds, leading to undefined
+ *   behavior.
+ * - If `buf` or `l` is `NULL`, the function will safely return 0, but the caller should ensure
+ *   that valid pointers are passed to avoid runtime errors.
+ * - The caller must ensure that `len` is large enough to cover any comparison with the lexeme.
+ * @note
+ * - If `len` is smaller than the length of the lexeme `l`, the function will return 0, as no
+ *   valid match can occur.
+ * - The function does not handle cases where `buf` contains multibyte characters (e.g., UTF-8
+ *   encoded strings), as it compares single bytes from `buf` and `l`.
+ * - This function is designed for comparing lexemes and buffer prefixes; it should not be used
+ *   for general-purpose string searching or comparisons of arbitrary buffer contents beyond
+ *   lexeme matching.
+ */
 static int matchLexeme(char* buf, int len, char* l)
 {
-    int i;
-    for(i=0; i<len; i++) {
-        if(l[i] == 0)      return i;
-        if(l[i] != buf[i]) return 0;
+    // Null check
+    if (buf == NULL || l == NULL) {
+        return 0;
     }
-    // Ran out of buffer.  This is still OK if we're also at the end
-    // of the lexeme.
-    if(l[i] == 0) return i;
+
+    // Check if the lexeme is an empty string
+    if (l[0] == '\0') {
+        return 0;
+    }
+
+    // Get length of the lexeme
+    int lex_len = strlen(l);
+
+    // Early exit if buffer length is shorter than lexeme length
+    if (len < lex_len) {
+        return 0;
+    }
+
+    if (strncmp(buf, l, lex_len) == 0 ) {
+        return lex_len;
+    }
+
     return 0;
 }
 
@@ -429,6 +481,8 @@ void naLex(struct Parser* p)
             continue;
         }
 
+        // TODO: Comments should probably be defined somewhere
+        // as a token, not here as a magic character.
         if (c == '#') {
             i = handleComment(p, i);
             continue;

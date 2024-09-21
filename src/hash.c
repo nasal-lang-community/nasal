@@ -1,4 +1,6 @@
 #include <string.h>
+#include <stdint.h>
+
 #include "nasal.h"
 #include "data.h"
 #include "debug.h"
@@ -204,7 +206,7 @@ int naHash_get(naRef hash, naRef key, naRef* out)
 
 static inline HashRec* safe_rec(naRef h) {
     // Extract the pointer from naRef using the same logic as the PTR macro
-    naPtr ptr = (naPtr)((struct naObj*)(_ULP(h) & REFMAGIC));
+    naPtr ptr = (naPtr)((struct naObj*)((uintptr_t)(h.ptr) & REFMAGIC));
 
     // Check what value the ptr.hash field contains
     DEBUG_LOG("safe_rec(): ptr.hash value: %p", (void*)ptr.hash);
